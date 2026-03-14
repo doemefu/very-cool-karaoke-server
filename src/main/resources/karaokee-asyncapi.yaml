@@ -1,0 +1,288 @@
+asyncapi: 3.0.0
+info:
+  title: Karaokee AsyncAPI
+  version: 1.0.0
+  description: WebSocket/STOMP events for the Karaokee Session Tool – FS26 Group 22
+
+servers:
+  development:
+    host: localhost:8080/ws
+    protocol: stomp
+    description: Local development
+  production:
+    host: sopra-fs26-group-22-server.oa.r.appspot.com/ws
+    protocol: stomp
+    description: Production (Google Cloud)
+
+defaultContentType: application/json
+
+# ─────────────────────────────────────────────
+#  CHANNELS  (Server → Client subscriptions)
+# ─────────────────────────────────────────────
+channels:
+
+  /topic/sessions/{sessionId}/currentSong:
+    address: /topic/sessions/{sessionId}/currentSong
+    description: >
+      Broadcast when the current song changes.
+      Triggered by: admin skip (POST /sessions/{id}/songs/skip) or natural song end.
+    parameters:
+      sessionId:
+        $ref: '#/components/parameters/sessionId'
+    messages:
+      currentSong:
+        $ref: '#/components/messages/CurrentSongMessage'
+
+  /topic/sessions/{sessionId}/votingRound:
+    address: /topic/sessions/{sessionId}/votingRound
+    description: >
+      Broadcast when a VotingRound starts (automatically after song ends),
+      when vote counts change, or when the round closes.
+      Used for the live leaderboard (S14).
+    parameters:
+      sessionId:
+        $ref: '#/components/parameters/sessionId'
+    messages:
+      votingRound:
+        $ref: '#/components/messages/VotingRoundMessage'
+
+  /topic/sessions/{sessionId}/reactions:
+    address: /topic/sessions/{sessionId}/reactions
+    description: >
+      Broadcast immediately when a participant sends a live reaction (S9).
+      Triggered by: POST /sessions/{id}/reactions.
+    parameters:
+      sessionId:
+        $ref: '#/components/parameters/sessionId'
+    messages:
+      reaction:
+        $ref: '#/components/messages/ReactionMessage'
+
+  /topic/sessions/{sessionId}/status:
+    address: /topic/sessions/{sessionId}/status
+    description: >
+      Broadcast when the session status changes (started, paused, ended).
+      Triggered by: PUT /sessions/{id}.
+    parameters:
+      sessionId:
+        $ref: '#/components/parameters/sessionId'
+    messages:
+      sessionStatus:
+        $ref: '#/components/messages/SessionStatusMessage'
+
+  /topic/sessions/{sessionId}/queue:
+    address: /topic/sessions/{sessionId}/queue
+    description: >
+      Broadcast when the song queue changes.
+      Triggered by: POST /sessions/{id}/songs or DELETE /sessions/{id}/songs/{songId}.
+    parameters:
+      sessionId:
+        $ref: '#/components/parameters/sessionId'
+    messages:
+      queue:
+        $ref: '#/components/messages/QueueMessage'
+
+  /topic/sessions/{sessionId}/participants:
+    address: /topic/sessions/{sessionId}/participants
+    description: >
+      Broadcast when the participant list changes.
+      Triggered by: POST or DELETE /sessions/{id}/participants.
+    parameters:
+      sessionId:
+        $ref: '#/components/parameters/sessionId'
+    messages:
+      participants:
+        $ref: '#/components/messages/ParticipantsMessage'
+
+# ─────────────────────────────────────────────
+#  OPERATIONS
+# ─────────────────────────────────────────────
+operations:
+
+  receiveCurrentSong:
+    action: receive
+    channel:
+      $ref: '#/channels/~1topic~1sessions~1{sessionId}~1currentSong'
+    summary: Client receives current song update
+
+  receiveVotingRound:
+    action: receive
+    channel:
+      $ref: '#/channels/~1topic~1sessions~1{sessionId}~1votingRound'
+    summary: Client receives voting round update (leaderboard)
+
+  receiveReaction:
+    action: receive
+    channel:
+      $ref: '#/channels/~1topic~1sessions~1{sessionId}~1reactions'
+    summary: Client receives live reaction
+
+  receiveSessionStatus:
+    action: receive
+    channel:
+      $ref: '#/channels/~1topic~1sessions~1{sessionId}~1status'
+    summary: Client receives session status change
+
+  receiveQueue:
+    action: receive
+    channel:
+      $ref: '#/channels/~1topic~1sessions~1{sessionId}~1queue'
+    summary: Client receives updated song queue
+
+  receiveParticipants:
+    action: receive
+    channel:
+      $ref: '#/channels/~1topic~1sessions~1{sessionId}~1participants'
+    summary: Client receives updated participant list
+
+# ─────────────────────────────────────────────
+#  COMPONENTS
+# ─────────────────────────────────────────────
+components:
+
+  parameters:
+    sessionId:
+      description: The unique ID of the karaoke session
+
+  messages:
+
+    CurrentSongMessage:
+      name: CurrentSongMessage
+      summary: Currently playing song with lyrics
+      payload:
+        $ref: '#/components/schemas/SongDTO'
+
+    VotingRoundMessage:
+      name: VotingRoundMessage
+      summary: Voting round with live vote counts
+      payload:
+        $ref: '#/components/schemas/VotingRoundDTO'
+
+    ReactionMessage:
+      name: ReactionMessage
+      summary: Single live reaction from a participant
+      payload:
+        $ref: '#/components/schemas/ReactionDTO'
+
+    SessionStatusMessage:
+      name: SessionStatusMessage
+      summary: Updated session (includes new status)
+      payload:
+        $ref: '#/components/schemas/SessionDTO'
+
+    QueueMessage:
+      name: QueueMessage
+      summary: Full ordered song queue
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/SongDTO'
+
+    ParticipantsMessage:
+      name: ParticipantsMessage
+      summary: Full participant list
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/UserDTO'
+
+  schemas:
+
+    UserStatus:
+      type: string
+      enum: [ONLINE, OFFLINE]
+
+    SessionStatus:
+      type: string
+      enum: [CREATED, ACTIVE, PAUSED, ENDED]
+
+    VotingStatus:
+      type: string
+      enum: [OPEN, CLOSED]
+
+    ReactionType:
+      type: string
+      enum: [FIRE, HEART, CLAP, LAUGH, SKULL]
+
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    SessionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        gamePin:
+          type: string
+        admin:
+          $ref: '#/components/schemas/UserDTO'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserDTO'
+
+    SongDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        artist:
+          type: string
+        lyrics:
+          type: string
+          nullable: true
+        currentVoteCount:
+          type: integer
+        performed:
+          type: boolean
+        addedBy:
+          $ref: '#/components/schemas/UserDTO'
+
+    VotingRoundDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+        roundNumber:
+          type: integer
+        status:
+          $ref: '#/components/schemas/VotingStatus'
+        startedAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        candidates:
+          type: array
+          description: Sorted descending by currentVoteCount
+          items:
+            $ref: '#/components/schemas/SongDTO'
+
+    ReactionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          $ref: '#/components/schemas/ReactionType'
+        sentAt:
+          type: string
+          format: date-time
+        sender:
+          $ref: '#/components/schemas/UserDTO'
+        duringPerformance:
+          $ref: '#/components/schemas/SongDTO'

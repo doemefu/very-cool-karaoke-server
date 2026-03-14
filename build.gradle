@@ -5,6 +5,7 @@ plugins {
     id 'idea'
     id 'jacoco'
     id "org.sonarqube" version "7.2.1.6560"
+    id "org.springdoc.openapi-gradle-plugin" version "1.9.0"
 }
 
 group = 'ch.uzh.ifi.hasel'
@@ -33,9 +34,19 @@ springBoot {
 
 dependencies {
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-	
+
+    // Provides the documentation API
+    implementation 'io.github.springwolf:springwolf-stomp:2.1.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
+
+    // Provides the UI for springwolf- optional
+    runtimeOnly 'io.github.springwolf:springwolf-ui:2.1.0'
+
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-json'
@@ -60,6 +71,12 @@ sonar {
         property "sonar.organization", "TODO"
         property "sonar.host.url", "https://sonarcloud.io"
     }
+}
+
+openApi {
+    apiDocsUrl = "http://localhost:8080/v3/api-docs"
+    outputDir = file("$buildDir/docs")
+    outputFileName = "karaokee-openapi.yaml"
 }
 
 jacocoTestReport {
