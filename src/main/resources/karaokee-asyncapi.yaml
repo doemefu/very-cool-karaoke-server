@@ -25,7 +25,8 @@ channels:
     address: /topic/sessions/{sessionId}/currentSong
     description: >
       Broadcast when the current song changes.
-      Triggered by: admin skip (POST /sessions/{id}/songs/skip) or natural song end.
+      Triggered by: admin skip (POST /sessions/{id}/songs/skip), natural song end,
+      or marking song as played (PUT /sessions/{id}/songs/{songId}/played).
     parameters:
       sessionId:
         $ref: '#/components/parameters/sessionId'
@@ -74,7 +75,8 @@ channels:
     address: /topic/sessions/{sessionId}/queue
     description: >
       Broadcast when the song queue changes.
-      Triggered by: POST /sessions/{id}/songs or DELETE /sessions/{id}/songs/{songId}.
+      Triggered by: POST /sessions/{id}/songs, DELETE /sessions/{id}/songs/{songId},
+      or PUT /sessions/{id}/songs/{songId}/played.
     parameters:
       sessionId:
         $ref: '#/components/parameters/sessionId'
@@ -86,7 +88,7 @@ channels:
     address: /topic/sessions/{sessionId}/participants
     description: >
       Broadcast when the participant list changes.
-      Triggered by: POST or DELETE /sessions/{id}/participants.
+      Triggered by: POST /sessions/{id}/participants or PUT /sessions/{id}/participants/{userId}.
     parameters:
       sessionId:
         $ref: '#/components/parameters/sessionId'
@@ -237,6 +239,12 @@ components:
       properties:
         id:
           type: integer
+        spotifyId:
+          type: string
+          nullable: true
+        geniusId:
+          type: string
+          nullable: true
         title:
           type: string
         artist:

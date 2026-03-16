@@ -84,20 +84,6 @@ paths:
           description: Unauthorized
 
   /users/{userId}:
-    get:
-      tags: [Users]
-      summary: Get user profile
-      parameters:
-        - $ref: '#/components/parameters/userId'
-      responses:
-        '200':
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserGetDTO'
-        '404':
-          description: User not found
     put:
       tags: [Users]
       summary: Update user – e.g. change password (S2)
@@ -239,15 +225,19 @@ paths:
                   $ref: '#/components/schemas/UserGetDTO'
 
   /sessions/{sessionId}/participants/{userId}:
-    delete:
+    put:
       tags: [Sessions]
-      summary: Leave a session (S5)
+      summary: Leave a session – unassigns user from it (S5)
+      description: |
+        Soft-leave: the user is removed from the active participant list but the
+        session record is preserved (e.g. for session history). The session itself
+        is not deleted. Triggers a WebSocket broadcast on /topic/sessions/{sessionId}/participants.
       parameters:
         - $ref: '#/components/parameters/sessionId'
         - $ref: '#/components/parameters/userId'
       responses:
         '204':
-          description: Left session successfully
+          description: User unassigned from session successfully
         '404':
           description: Session or participant not found
 
@@ -353,6 +343,11 @@ paths:
     post:
       tags: [Songs]
       summary: Skip the current song – admin only (S7)
+      description: |
+        Advances the queue to the next song without waiting for the current one to finish.
+        Triggers two WebSocket broadcasts:
+        - /topic/sessions/{sessionId}/currentSong with the new current song
+        - /topic/sessions/{sessionId}/votingRound when a new voting round starts automatically
       parameters:
         - $ref: '#/components/parameters/sessionId'
       responses:
@@ -379,6 +374,26 @@ paths:
           description: Song removed
         '403':
           description: Only admin can remove songs
+        '404':
+          description: Song or session not found
+
+  /sessions/{sessionId}/songs/{songId}/played:
+    put:
+      tags: [Songs]
+      summary: Mark a song as played – admin only
+      description: Sets the `performed` flag on the song to true after it has been sung.
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - $ref: '#/components/parameters/songId'
+      responses:
+        '200':
+          description: Song marked as played
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongGetDTO'
+        '403':
+          description: Only admin can mark songs as played
         '404':
           description: Song or session not found
 
@@ -458,20 +473,6 @@ paths:
           description: No song currently performing
         '404':
           description: Session not found
-    get:
-      tags: [Reactions]
-      summary: Get reactions for the current performance
-      parameters:
-        - $ref: '#/components/parameters/sessionId'
-      responses:
-        '200':
-          description: List of reactions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ReactionGetDTO'
 
 components:
 
@@ -540,7 +541,7 @@ components:
         newPassword:
           type: string
           format: password
-        confirmPassword:
+        oldPassword:
           type: string
           format: password
 
@@ -714,22 +715,6 @@ components:
       properties:
         type:
           $ref: '#/components/schemas/ReactionType'
-
-    ReactionGetDTO:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        type:
-          $ref: '#/components/schemas/ReactionType'
-        sentAt:
-          type: string
-          format: date-time
-        sender:
-          $ref: '#/components/schemas/UserGetDTO'
-        duringPerformance:
-          $ref: '#/components/schemas/SongGetDTO'
 
   securitySchemes:
     BearerAuth:
