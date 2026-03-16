@@ -1,118 +1,111 @@
-# SoPra RESTful Service Template FS26
+# Karaokee – Server
 
-## Getting started with Spring Boot
--   Documentation: https://docs.spring.io/spring-boot/docs/current/reference/html/index.html
--   Guides: http://spring.io/guides
-    -   Building a RESTful Web Service: http://spring.io/guides/gs/rest-service/
-    -   Building REST services with Spring: https://spring.io/guides/tutorials/rest/
+> Remove the shame, enhance the game by making karaoke parties hustle-free.
 
-## Setup this Template with your IDE of choice
-Download your IDE of choice (e.g., [IntelliJ](https://www.jetbrains.com/idea/download/), [Visual Studio Code](https://code.visualstudio.com/), or [Eclipse](http://www.eclipse.org/downloads/)). Make sure Java 17 is installed on your system (for Windows, please make sure your `JAVA_HOME` environment variable is set to the correct version of Java).
+Karaokee is a web-based karaoke session tool for real-time multi-user interaction.
+A host creates a session that guests join from their own device. Participants collaboratively
+build a song queue, vote on the next track, follow lyrics on-screen, and send live reactions
+during performances.
 
-### IntelliJ
-If you consider to use IntelliJ as your IDE of choice, you can make use of your free educational license [here](https://www.jetbrains.com/community/education/#students).
-1. File -> Open... -> SoPra server template
-2. Accept to import the project as a `gradle project`
-3. To build right click the `build.gradle` file and choose `Run Build`
+---
 
-### VS Code
-The following extensions can help you get started more easily:
--   `vmware.vscode-spring-boot`
--   `vscjava.vscode-spring-initializr`
--   `vscjava.vscode-spring-boot-dashboard`
--   `vscjava.vscode-java-pack`
+## Deployments
 
-**Note:** You'll need to build the project first with Gradle, just click on the `build` command in the _Gradle Tasks_ extension. Then check the _Spring Boot Dashboard_ extension if it already shows `soprafs26` and hit the play button to start the server. If it doesn't show up, restart VS Code and check again.
+| Environment     | URL                                                        |
+|-----------------|------------------------------------------------------------|
+| Server (prod)   | https://sopra-fs26-group-22-server.oa.r.appspot.com        |
+| Client (prod)   | https://sopra-fs26-group-22-client.vercel.app              |
+| GitHub (server) | https://github.com/sopra-fs26-group-22/karaoke-server      |
+| GitHub (client) | https://github.com/sopra-fs26-group-22/karaoke-client      |
+| SonarQube       | TBD                                                        |
+| Docker          | https://hub.docker.com/repository/docker/2026sopragroup22  |
 
-## Building with Gradle
-You can use the local Gradle Wrapper to build the application.
--   macOS: `./gradlew`
--   Linux: `./gradlew`
--   Windows: `./gradlew.bat`
+---
 
-More Information about [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) and [Gradle](https://gradle.org/docs/).
+## API Documentation
 
-### Build
+Both docs are auto-generated at runtime. Start the server locally, then open:
 
-```bash
-./gradlew build
+| Tool | URL | Covers |
+|---|---|---|
+| Swagger UI | http://localhost:8080/swagger-ui.html | All REST endpoints |
+| Springwolf | http://localhost:8080/springwolf/asyncapi-ui.html | All WebSocket/STOMP events |
+
+The raw specs are also available:
+```
+GET http://localhost:8080/v3/api-docs.yaml        → OpenAPI YAML
+GET http://localhost:8080/springwolf/docs.yaml    → AsyncAPI YAML
 ```
 
-### Run
+For the M2 design specs (before implementation), see:
+- `src/main/resources/karaokee-openapi.yaml` → paste into [editor.swagger.io](https://editor.swagger.io)
+- `src/main/resources/karaokee-asyncapi.yaml` → paste into [editor.swagger.io](https://editor.swagger.io)
+
+---
+
+## Setup & Development
+
+For a full setup guide including Google Cloud deployment, Docker, and Vercel, follow the official SoPra FS26 tutorial:
+
+👉 **https://luciocanepa.github.io/soprafs26_tutorial_1/**
+
+### Quick start (local)
 
 ```bash
 ./gradlew bootRun
 ```
 
-You can verify that the server is running by visiting `localhost:8080` in your browser.
+The server starts on `http://localhost:8080`.
 
-### Test
+### Run tests
 
 ```bash
 ./gradlew test
 ```
 
-### Development Mode
-You can start the backend in development mode, this will automatically trigger a new build and reload the application
-once the content of a file has been changed.
+### Development mode (auto-reload)
 
-Start two terminal windows and run:
+Open two terminals:
 
-`./gradlew build --continuous`
+```bash
+# Terminal 1
+./gradlew build --continuous -xtest
 
-and in the other one:
+# Terminal 2
+./gradlew bootRun
+```
 
-`./gradlew bootRun`
+---
 
-If you want to avoid running all tests with every change, use the following command instead:
+## IntelliJ: Rendered API Specs
 
-`./gradlew build --continuous -xtest`
+To get live rendering of the OpenAPI and AsyncAPI YAML files directly in IntelliJ:
 
-## API Endpoint Testing with Postman
-We recommend using [Postman](https://www.getpostman.com) to test your API Endpoints.
+### OpenAPI (Swagger UI in editor)
 
-## Debugging
-If something is not working and/or you don't know what is going on. We recommend using a debugger and step-through the process step-by-step.
+1. Install the **OpenAPI Specifications** plugin:
+   `IntelliJ → Settings → Plugins → search "OpenAPI Specifications"` (by JetBrains)
+2. Open `karaokee-openapi.yaml` – a Swagger UI preview appears in the editor split view.
+3. A `Run` gutter icon lets you start a local Swagger UI server for the file.
 
-To configure a debugger for SpringBoot's Tomcat servlet (i.e. the process you start with `./gradlew bootRun` command), do the following:
+### YAML Schema Validation
 
-1. Open Tab: **Run**/Edit Configurations
-2. Add a new Remote Configuration and name it properly
-3. Start the Server in Debug mode: `./gradlew bootRun --debug-jvm`
-4. Press `Shift + F9` or the use **Run**/Debug "Name of your task"
-5. Set breakpoints in the application where you need it
-6. Step through the process one step at a time
+To get autocompletion and validation for both spec files in IntelliJ:
 
-## Testing
-Have a look here: https://www.baeldung.com/spring-boot-testing
+1. `Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema Mappings`
+2. Add mapping:
+    - `karaokee-openapi.yaml` → Schema URL: `https://spec.openapis.org/oas/3.0/schema/2021-09-28`
+    - `karaokee-asyncapi.yaml` → Schema URL: `https://asyncapi.com/schema-store/3.0.0.json`
 
-<br>
-<br>
-<br>
+---
 
-## Docker
+## Commit Standards
 
-### Introduction
-This year Docker will be used to ease the process of deployment.\
-Docker is a tool that uses containers as isolated environments, ensuring that the application runs consistently and uniformly across different devices.\
-Everything in this repository is already set up to minimize your effort for deployment.\
-All changes to the main branch will automatically be pushed to dockerhub and optimized for production.
+Every commit **must** reference a GitHub Issue number — required for TA grading:
 
-### Setup
-1. **One** member of the team should create an account on [dockerhub](https://hub.docker.com/), _incorporating the group number into the account name_, for example, `SoPra_group_XX`.\
-2. This account then creates a repository on dockerhub with the _same name as the group's Github repository name_.\
-3. Finally, the person's account details need to be added as [secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository) to the group's repository:
-    - dockerhub_username (the username of the dockerhub account from step 1, for example, `SoPra_group_XX`)
-    - dockerhub_password (a generated PAT([personal access token](https://docs.docker.com/docker-hub/access-tokens/)) of the account with read and write access)
-    - dockerhub_repo_name (the name of the dockerhub repository from step 2)
+```bash
+git commit -m "feat: implement POST /sessions endpoint (#12)"
+git commit -m "fix: return 409 when username already taken (#5)"
+```
 
-### Pull and run
-Once the image is created and has been successfully pushed to dockerhub, the image can be run on any machine.\
-Ensure that [Docker](https://www.docker.com/) is installed on the machine you wish to run the container.\
-First, pull (download) the image with the following command, replacing your username and repository name accordingly.
-
-```docker pull <dockerhub_username>/<dockerhub_repo_name>```
-
-Then, run the image in a container with the following command, again replacing _<dockerhub_username>_ and _<dockerhub_repo_name>_ accordingly.
-
-```docker run -p 3000:3000 <dockerhub_username>/<dockerhub_repo_name>```
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for full annotation guidelines (REST + WebSocket).
