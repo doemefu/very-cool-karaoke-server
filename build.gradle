@@ -67,8 +67,8 @@ bootJar {
 
 sonar {
     properties {
-        property "sonar.projectKey", "TODO"
-        property "sonar.organization", "TODO"
+        property "sonar.projectKey", System.getenv("SONAR_PROJECT_KEY")
+        property "sonar.organization", System.getenv("SONAR_ORGANIZATION")
         property "sonar.host.url", "https://sonarcloud.io"
     }
 }
