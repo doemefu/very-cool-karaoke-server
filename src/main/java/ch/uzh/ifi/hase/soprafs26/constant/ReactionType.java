@@ -5,25 +5,31 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.annotation.Generated;
 
 /**
- * Gets or Sets UserStatus
+ * Gets or Sets ReactionType
  */
 
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T14:36:59.836313+01:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
-public enum UserStatus {
+public enum ReactionType {
 
-    ONLINE("ONLINE"),
+    FIRE("FIRE"),
 
-    OFFLINE("OFFLINE");
+    HEART("HEART"),
+
+    CLAP("CLAP"),
+
+    LAUGH("LAUGH"),
+
+    SKULL("SKULL");
 
     private final String value;
 
-    UserStatus(String value) {
+    ReactionType(String value) {
         this.value = value;
     }
 
     @JsonCreator
-    public static UserStatus fromValue(String value) {
-        for (UserStatus b : UserStatus.values()) {
+    public static ReactionType fromValue(String value) {
+        for (ReactionType b : ReactionType.values()) {
             if (b.value.equals(value)) {
                 return b;
             }

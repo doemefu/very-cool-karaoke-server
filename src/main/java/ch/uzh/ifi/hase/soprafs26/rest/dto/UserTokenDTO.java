@@ -7,21 +7,24 @@ import jakarta.annotation.Generated;
 import jakarta.validation.Valid;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
- * UserGetDTO
+ * UserTokenDTO
  */
 
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T14:36:59.836313+01:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
-public class UserGetDTO {
+public class UserTokenDTO {
 
     private Long id;
 
     private String username;
 
+    private UUID token;
+
     private UserStatus status;
 
-    public UserGetDTO id(Long id) {
+    public UserTokenDTO id(Long id) {
         this.id = id;
         return this;
     }
@@ -42,7 +45,7 @@ public class UserGetDTO {
         this.id = id;
     }
 
-    public UserGetDTO username(String username) {
+    public UserTokenDTO username(String username) {
         this.username = username;
         return this;
     }
@@ -63,7 +66,28 @@ public class UserGetDTO {
         this.username = username;
     }
 
-    public UserGetDTO status(UserStatus status) {
+    public UserTokenDTO token(UUID token) {
+        this.token = token;
+        return this;
+    }
+
+    /**
+     * Get token
+     *
+     * @return token
+     */
+    @Valid
+    @Schema(name = "token", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("token")
+    public UUID getToken() {
+        return token;
+    }
+
+    public void setToken(UUID token) {
+        this.token = token;
+    }
+
+    public UserTokenDTO status(UserStatus status) {
         this.status = status;
         return this;
     }
@@ -92,22 +116,24 @@ public class UserGetDTO {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        UserGetDTO userGetDTO = (UserGetDTO) o;
-        return Objects.equals(this.id, userGetDTO.id) &&
-                Objects.equals(this.username, userGetDTO.username) &&
-                Objects.equals(this.status, userGetDTO.status);
+        UserTokenDTO userTokenDTO = (UserTokenDTO) o;
+        return Objects.equals(this.id, userTokenDTO.id) &&
+                Objects.equals(this.username, userTokenDTO.username) &&
+                Objects.equals(this.token, userTokenDTO.token) &&
+                Objects.equals(this.status, userTokenDTO.status);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, status);
+        return Objects.hash(id, username, token, status);
     }
 
     @Override
     public String toString() {
-        String sb = "class UserGetDTO {\n" +
+        String sb = "class UserTokenDTO {\n" +
                 "    id: " + toIndentedString(id) + "\n" +
                 "    username: " + toIndentedString(username) + "\n" +
+                "    token: " + toIndentedString(token) + "\n" +
                 "    status: " + toIndentedString(status) + "\n" +
                 "}";
         return sb;
