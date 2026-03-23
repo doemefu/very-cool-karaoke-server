@@ -99,6 +99,49 @@ To get autocompletion and validation for both spec files in IntelliJ:
 
 ---
 
+## Implementing an API Interface
+
+The REST endpoints are defined as generated interfaces (`SessionsApi`, `SongsApi`, etc.).
+They contain all route mappings and Swagger annotations — **never edit them directly**.
+
+To implement an endpoint, create a controller that implements the interface:
+
+### 1. Create a controller
+
+```java
+@RestController
+public class SessionController implements SessionsApi {
+
+    private final SessionService sessionService;
+
+    public SessionController(SessionService sessionService) {
+        this.sessionService = sessionService;
+    }
+}
+```
+
+### 2. Generate method stubs
+
+In IntelliJ: right-click the class name → **Generate → Implement Methods** → select all → OK
+
+### 3. Fill in the logic
+
+```java
+@Override
+public ResponseEntity<SessionGetDTO> sessionsPost(SessionPostDTO sessionPostDTO) {
+    SessionGetDTO result = sessionService.createSession(sessionPostDTO);
+    return ResponseEntity.status(HttpStatus.CREATED).body(result);
+}
+```
+
+Methods you haven't implemented yet return `501 Not Implemented` by default — implement them incrementally.
+
+**Rules:**
+- One controller per interface (`SessionsApi` → `SessionController`, `SongsApi` → `SongController`, etc.)
+- Business logic belongs in a `@Service` class, not in the controller
+
+---
+
 ## Commit Standards
 
 Every commit **must** reference a GitHub Issue number — required for TA grading:

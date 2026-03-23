@@ -82,7 +82,6 @@ public class UserControllerTest {
 		user.setStatus(UserStatus.ONLINE);
 
 		UserPostDTO userPostDTO = new UserPostDTO();
-		userPostDTO.setName("Test User");
 		userPostDTO.setUsername("testUsername");
 
 		given(userService.createUser(Mockito.any())).willReturn(user);

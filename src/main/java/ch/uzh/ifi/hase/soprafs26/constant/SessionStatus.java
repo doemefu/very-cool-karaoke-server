@@ -5,25 +5,29 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.annotation.Generated;
 
 /**
- * Gets or Sets UserStatus
+ * Gets or Sets SessionStatus
  */
 
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T14:36:59.836313+01:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
-public enum UserStatus {
+public enum SessionStatus {
 
-    ONLINE("ONLINE"),
+    CREATED("CREATED"),
 
-    OFFLINE("OFFLINE");
+    ACTIVE("ACTIVE"),
+
+    PAUSED("PAUSED"),
+
+    ENDED("ENDED");
 
     private final String value;
 
-    UserStatus(String value) {
+    SessionStatus(String value) {
         this.value = value;
     }
 
     @JsonCreator
-    public static UserStatus fromValue(String value) {
-        for (UserStatus b : UserStatus.values()) {
+    public static SessionStatus fromValue(String value) {
+        for (SessionStatus b : SessionStatus.values()) {
             if (b.value.equals(value)) {
                 return b;
             }
