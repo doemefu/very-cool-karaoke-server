@@ -5,7 +5,7 @@ plugins {
     id 'idea'
     id 'jacoco'
     id "org.sonarqube" version "7.2.1.6560"
-    id "org.springdoc.openapi-gradle-plugin" version "1.9.0"
+    id "org.openapi.generator" version "7.7.0"
 }
 
 group = 'ch.uzh.ifi.hasel'
@@ -73,11 +73,33 @@ sonar {
     }
 }
 
-openApi {
-    apiDocsUrl = "http://localhost:8080/v3/api-docs"
-    outputDir = file("$buildDir/docs")
-    outputFileName = "karaokee-openapi.yaml"
+openApiGenerate {
+    generatorName = "spring"
+    inputSpec = "$rootDir/src/main/resources/static/karaokee-openapi.json"
+    outputDir = "$buildDir/generated"
+    apiPackage = "ch.uzh.ifi.hase.soprafs26.controller"
+    modelPackage = "ch.uzh.ifi.hase.soprafs26.rest.dto"
+    globalProperties = [
+        apis           : "",
+        supportingFiles: ""
+    ]
+    configOptions = [
+        useSpringBoot3  : "true",
+        interfaceOnly   : "true",
+        useTags         : "true",
+        openApiNullable : "false"
+    ]
 }
+
+sourceSets {
+    main {
+        java {
+            srcDir "$buildDir/generated/src/main/java"
+        }
+    }
+}
+
+compileJava.dependsOn tasks.openApiGenerate
 
 jacocoTestReport {
     reports {
