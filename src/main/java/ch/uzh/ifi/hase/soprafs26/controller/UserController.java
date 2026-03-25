@@ -21,6 +21,8 @@ import java.util.List;
 @RestController
 public class UserController {
 
+    //TODO: Distribute methods to other classes and delete after. new userController ready under UsersController
+
     private final UserService userService;
 
     UserController(UserService userService) {
