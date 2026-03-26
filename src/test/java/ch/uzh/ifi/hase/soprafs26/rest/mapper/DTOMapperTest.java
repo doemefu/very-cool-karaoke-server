@@ -33,7 +33,6 @@ public class DTOMapperTest {
 		// create User
 		User user = new User();
 		user.setUsername("firstname@lastname");
-		user.setStatus(UserStatus.OFFLINE);
 		user.setToken("1");
 
 		// MAP -> Create UserGetDTO
@@ -42,6 +41,5 @@ public class DTOMapperTest {
 		// check content
 		assertEquals(user.getId(), userGetDTO.getId());
 		assertEquals(user.getUsername(), userGetDTO.getUsername());
-		assertEquals(user.getStatus(), userGetDTO.getStatus());
 	}
 }
