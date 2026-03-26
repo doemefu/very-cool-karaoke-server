@@ -8,7 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.server.ResponseStatusException;
 
-import ch.uzh.ifi.hase.soprafs26.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
 
@@ -42,6 +41,7 @@ public class UserServiceIntegrationTest {
 
 		User testUser = new User();
 		testUser.setUsername("testUsername");
+        testUser.setPassword("testPassword");
 
 		// when
 		User createdUser = userService.createUser(testUser);
@@ -50,7 +50,6 @@ public class UserServiceIntegrationTest {
 		assertEquals(testUser.getId(), createdUser.getId());
 		assertEquals(testUser.getUsername(), createdUser.getUsername());
 		assertNotNull(createdUser.getToken());
-		assertEquals(UserStatus.OFFLINE, createdUser.getStatus());
 	}
 
 	@Test
@@ -59,6 +58,7 @@ public class UserServiceIntegrationTest {
 
 		User testUser = new User();
 		testUser.setUsername("testUsername");
+        testUser.setPassword("testPassword");
 		userService.createUser(testUser);
 
 		// attempt to create second user with same username

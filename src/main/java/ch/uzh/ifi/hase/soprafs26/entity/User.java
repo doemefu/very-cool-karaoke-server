@@ -1,25 +1,14 @@
 package ch.uzh.ifi.hase.soprafs26.entity;
 
-import ch.uzh.ifi.hase.soprafs26.constant.UserStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 
-/**
- * Internal User Representation
- * This class composes the internal representation of the user and defines how
- * the user is stored in the database.
- * Every variable will be mapped into a database field with the @Column
- * annotation
- * - nullable = false -> this cannot be left empty
- * - unique = true -> this value must be unqiue across the database -> composes
- * the primary key
- */
 @Entity
 @Table(name = "users")
 public class User implements Serializable {
-
-    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue
@@ -28,11 +17,15 @@ public class User implements Serializable {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(nullable = false)
+    private String password;
+
     @Column(nullable = false, unique = true)
     private String token;
 
-    @Column(nullable = false)
-    private UserStatus status;
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDate createdAt;
 
     public Long getId() {
         return id;
@@ -50,6 +43,14 @@ public class User implements Serializable {
         this.username = username;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getToken() {
         return token;
     }
@@ -58,11 +59,9 @@ public class User implements Serializable {
         this.token = token;
     }
 
-    public UserStatus getStatus() {
-        return status;
+    public LocalDate getCreatedAt() {
+        return createdAt;
     }
 
-    public void setStatus(UserStatus status) {
-        this.status = status;
-    }
+    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
 }
