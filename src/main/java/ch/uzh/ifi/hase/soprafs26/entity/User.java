@@ -1,8 +1,10 @@
 package ch.uzh.ifi.hase.soprafs26.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -15,14 +17,15 @@ public class User implements Serializable {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, unique = true)
     private String token;
 
-    @Column()
-    private String createdAt;
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDate createdAt;
 
     public Long getId() {
         return id;
@@ -56,11 +59,9 @@ public class User implements Serializable {
         this.token = token;
     }
 
-    public String getCreatedAt() {
+    public LocalDate getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
 }
