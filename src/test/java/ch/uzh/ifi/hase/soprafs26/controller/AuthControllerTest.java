@@ -58,14 +58,62 @@ public class AuthControllerTest {
 				.andExpect(jsonPath("$.username", is(user.getUsername())));
 	}
 
-	/**
-	 * Helper Method to convert userPostDTO into a JSON string such that the input
-	 * can be processed
-	 * Input will look like this: {"name": "Test User", "username": "testUsername"}
-	 * 
-	 * @param object
-	 * @return string
-	 */
+    @Test
+    public void loginUser_validCredentials_returnsToken() throws Exception {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("testUsername");
+        user.setToken("test-token");
+
+        given(userService.loginUser(Mockito.any())).willReturn(user);
+
+        UserPostDTO userPostDTO = new UserPostDTO();
+        userPostDTO.setUsername("testUsername");
+        userPostDTO.setPassword("password");
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(userPostDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+                .andExpect(jsonPath("$.username", is(user.getUsername())))
+                .andExpect(jsonPath("$.token", is(user.getToken())));
+    }
+
+    @Test
+    public void loginUser_invalidCredentials_returns401() throws Exception {
+        given(userService.loginUser(Mockito.any()))
+                .willThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+
+        UserPostDTO userPostDTO = new UserPostDTO();
+        userPostDTO.setUsername("testUsername");
+        userPostDTO.setPassword("wrongPassword");
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(userPostDTO)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void logoutUser_validToken_returns204() throws Exception {
+        Mockito.doNothing().when(userService).logoutUser(Mockito.any());
+
+        mockMvc.perform(post("/auth/logout")
+                        .header("Authorization", "Bearer test-token"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void logoutUser_invalidToken_returns401() throws Exception {
+        Mockito.doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token"))
+                .when(userService).logoutUser(Mockito.any());
+
+        mockMvc.perform(post("/auth/logout")
+                        .header("Authorization", "Bearer invalid-token"))
+                .andExpect(status().isUnauthorized());
+    }
+
 	private String asJsonString(final Object object) {
 		try {
 			return new ObjectMapper().writeValueAsString(object);

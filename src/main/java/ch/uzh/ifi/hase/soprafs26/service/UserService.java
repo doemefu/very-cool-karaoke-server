@@ -67,6 +67,15 @@ public class UserService {
         return user;
     }
 
+    public void logoutUser(String token) {
+        User user = userRepository.findByToken(token);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
+        }
+        user.setToken(UUID.randomUUID().toString());
+        userRepository.save(user);
+    }
+
     private void checkIfUserExists(User userToBeCreated) {
         User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
 
