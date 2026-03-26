@@ -32,8 +32,10 @@ public class AuthController implements AuthApi {
     // Returns 200 + UserTokenDTO on success, 401 if credentials invalid, 404 if user not found
     @Override
     public ResponseEntity<UserTokenDTO> authLoginPost(UserPostDTO userPostDTO) {
-        // TODO: delegate to authService.login(userPostDTO)
-        throw new UnsupportedOperationException("Not implemented yet");
+        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
+        User loggedInUser = userService.loginUser(userInput);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(DTOMapper.INSTANCE.convertEntityToUserTokenDTO(loggedInUser));
     }
 
     // POST /auth/logout — Invalidates token, sets user status to OFFLINE
