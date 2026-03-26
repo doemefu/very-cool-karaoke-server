@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs26.entity;
 
-import ch.uzh.ifi.hase.soprafs26.constant.UserStatus;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
