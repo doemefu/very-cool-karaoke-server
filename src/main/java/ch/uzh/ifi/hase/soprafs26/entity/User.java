@@ -21,7 +21,7 @@ public class User implements Serializable {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @Column(nullable = true)
+    @Column()
     private String createdAt;
 
     public Long getId() {

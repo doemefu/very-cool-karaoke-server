@@ -2,7 +2,6 @@ package ch.uzh.ifi.hase.soprafs26.rest.mapper;
 
 import org.junit.jupiter.api.Test;
 
-import ch.uzh.ifi.hase.soprafs26.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.UserPostDTO;
