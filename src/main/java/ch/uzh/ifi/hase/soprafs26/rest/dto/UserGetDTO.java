@@ -1,39 +1,13 @@
 package ch.uzh.ifi.hase.soprafs26.rest.dto;
 
-import ch.uzh.ifi.hase.soprafs26.constant.UserStatus;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.annotation.Generated;
-import jakarta.validation.Valid;
+import java.time.LocalDate;
 
-import java.util.Objects;
-
-/**
- * UserGetDTO
- */
-
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T14:36:59.836313+01:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
 public class UserGetDTO {
-
     private Long id;
-
     private String username;
+    private LocalDate createdAt;
+    private String token;
 
-    private UserStatus status;
-
-    public UserGetDTO id(Long id) {
-        this.id = id;
-        return this;
-    }
-
-    /**
-     * Get id
-     *
-     * @return id
-     */
-
-    @Schema(name = "id", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @JsonProperty("id")
     public Long getId() {
         return id;
     }
@@ -42,19 +16,6 @@ public class UserGetDTO {
         this.id = id;
     }
 
-    public UserGetDTO username(String username) {
-        this.username = username;
-        return this;
-    }
-
-    /**
-     * Get username
-     *
-     * @return username
-     */
-
-    @Schema(name = "username", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @JsonProperty("username")
     public String getUsername() {
         return username;
     }
@@ -63,65 +24,11 @@ public class UserGetDTO {
         this.username = username;
     }
 
-    public UserGetDTO status(UserStatus status) {
-        this.status = status;
-        return this;
-    }
+    public LocalDate getCreatedAt() { return createdAt; }
 
-    /**
-     * Get status
-     *
-     * @return status
-     */
-    @Valid
-    @Schema(name = "status", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @JsonProperty("status")
-    public UserStatus getStatus() {
-        return status;
-    }
+    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
 
-    public void setStatus(UserStatus status) {
-        this.status = status;
-    }
+    public String getToken() { return token; }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        UserGetDTO userGetDTO = (UserGetDTO) o;
-        return Objects.equals(this.id, userGetDTO.id) &&
-                Objects.equals(this.username, userGetDTO.username) &&
-                Objects.equals(this.status, userGetDTO.status);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, username, status);
-    }
-
-    @Override
-    public String toString() {
-        String sb = "class UserGetDTO {\n" +
-                "    id: " + toIndentedString(id) + "\n" +
-                "    username: " + toIndentedString(username) + "\n" +
-                "    status: " + toIndentedString(status) + "\n" +
-                "}";
-        return sb;
-    }
-
-    /**
-     * Convert the given object to string with each line indented by 4 spaces
-     * (except the first line).
-     */
-    private String toIndentedString(Object o) {
-        if (o == null) {
-            return "null";
-        }
-        return o.toString().replace("\n", "\n    ");
-    }
+    public void setToken(String token) { this.token = token; }
 }
-
