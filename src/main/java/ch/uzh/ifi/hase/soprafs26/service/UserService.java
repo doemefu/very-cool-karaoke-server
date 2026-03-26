@@ -53,16 +53,20 @@ public class UserService {
         return newUser;
     }
 
-    /**
-     * This is a helper method that will check the uniqueness criteria of the
-     * username and the name
-     * defined in the User entity. The method will do nothing if the input is unique
-     * and throw an error otherwise.
-     *
-     * @param userToBeCreated
-     * @throws org.springframework.web.server.ResponseStatusException
-     * @see User
-     */
+    public User loginUser(User userInput) {
+        User user = userRepository.findByUsername(userInput.getUsername());
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid credentials");
+        }
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        if (!encoder.matches(userInput.getPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
+        user.setToken(UUID.randomUUID().toString());
+        userRepository.flush();
+        return user;
+    }
+
     private void checkIfUserExists(User userToBeCreated) {
         User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
 

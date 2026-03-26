@@ -43,13 +43,4 @@ public class UserController {
         }
         return userGetDTOs;
     }
-
-    @PostMapping("/users")
-    @ResponseStatus(HttpStatus.CREATED)
-    @ResponseBody
-    public UserGetDTO createUser(@RequestBody UserPostDTO userPostDTO) {
-        User userInput = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
-        User createdUser = userService.createUser(userInput);
-        return DTOMapper.INSTANCE.convertEntityToUserGetDTO(createdUser);
-    }
 }
