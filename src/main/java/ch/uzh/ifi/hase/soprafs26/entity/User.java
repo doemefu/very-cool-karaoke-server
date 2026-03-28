@@ -5,6 +5,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import ch.uzh.ifi.hase.soprafs26.constant.UserStatus;
+import java.util.Objects;
+import jakarta.persistence.*;
+
 
 @Entity
 @Table(name = "users")
@@ -27,41 +31,50 @@ public class User implements Serializable {
     @CreationTimestamp
     private LocalDate createdAt;
 
-    public Long getId() {
-        return id;
+
+    // equals / hashCode on id 
+    // required for Set<User> (used in Session.participants) to correctly 
+    // identify duplicates and make addParticipant() idempotent.
+    // two User objects with the same database id are the same participant.
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        User other = (User) o;
+        // compare by id. Returns false for transient entities (id == null)
+        // so they don't accidentally collide before being persisted.
+        return id != null && Objects.equals(id, other.id);
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public int hashCode() {
+        // a fixed constant for transient entities (id == null) ensures they
+        // can safely live in a HashSet before being saved. Once persisted,
+        // id is stable and Objects.hash(id) is consistent across calls.
+        return id == null ? 31 : Objects.hash(id);
     }
 
-    public String getUsername() {
-        return username;
-    }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    // getters and setters
 
-    public String getPassword() {
-        return password;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    public String getToken() {
-        return token;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public void setToken(String token) {
-        this.token = token;
-    }
+    public String getToken() { return token; }
+    public void setToken(String token) { this.token = token; }
 
     public LocalDate getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
+    public void setCreatedAt(LocalDate createdAt) {
+        this.createdAt = createdAt;
+    }
 }

@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.util.Set;
+
 import java.time.OffsetDateTime;
 import java.util.Random;
 
@@ -23,45 +28,147 @@ public class SessionService {
     private final Logger log = LoggerFactory.getLogger(SessionService.class);
 
     private final SessionRepository sessionRepository;
-    private final Random random = new Random();
+    private final UserRepository userRepository;
 
-    public SessionService(@Qualifier("sessionRepository") SessionRepository sessionRepository) {
+    @Autowired
+    public SessionService(SessionRepository sessionRepository,
+                          UserRepository userRepository) {
         this.sessionRepository = sessionRepository;
+        this.userRepository = userRepository;
     }
 
-    public SessionGetDTO createSession(SessionPostDTO dto) {
+    /*
+    create a new session. The calling user becomes the admin and is
+    also added to the participant list automatically.
+     */
+    public Session createSession(String name, String description, User admin) {
         Session session = new Session();
-        session.setName(dto.getName());
-        session.setDescription(dto.getDescription());
-        session.setStatus(SessionStatus.CREATED);
-        session.setCreatedAt(OffsetDateTime.now());
-        session.setGamePin(generateUniqueGamePin());
-        // TODO: set admin from authenticated user once auth is implemented
-
-        session = sessionRepository.save(session);
-        sessionRepository.flush();
-
-        log.debug("Created session: {}", session.getId());
-        return toGetDTO(session);
+        session.setName(name);
+        session.setDescription(description);
+        session.setAdmin(admin);
+        // Admin is automatically a participant of their own session
+        session.addParticipant(admin);
+        Session saved = sessionRepository.save(session);
+        log.debug("Created session {} with admin {}", saved.getId(), admin.getId());
+        return saved;
     }
 
-    private String generateUniqueGamePin() {
-        String pin;
-        do {
-            pin = String.format("%06d", random.nextInt(1_000_000));
-        } while (sessionRepository.findByGamePin(pin) != null);
-        return pin;
+
+    public Session getSessionById(Long sessionId) {
+        return sessionRepository.findById(sessionId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Session not found"));
     }
 
-    private SessionGetDTO toGetDTO(Session session) {
-        SessionGetDTO dto = new SessionGetDTO();
-        dto.setId(session.getId());
-        dto.setName(session.getName());
-        dto.setDescription(session.getDescription());
-        dto.setGamePin(session.getGamePin());
-        dto.setStatus(session.getStatus());
-        dto.setCreatedAt(session.getCreatedAt());
-        // admin and participants mapped here once auth is wired up
-        return dto;
+
+    public Session updateSessionStatus(Long sessionId, SessionStatus newStatus, Long requesterId) {
+        Session session = getSessionById(sessionId);
+
+        if (!session.getAdmin().getId().equals(requesterId)) {
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN, "Only the admin can change session status");
+        }
+
+        SessionStatus current = session.getStatus();
+        boolean validTransition =
+            (current == SessionStatus.CREATED && newStatus == SessionStatus.ACTIVE) ||
+            (current == SessionStatus.ACTIVE  && newStatus == SessionStatus.PAUSED)  ||
+            (current == SessionStatus.PAUSED  && newStatus == SessionStatus.ACTIVE)  ||
+            (current == SessionStatus.ACTIVE  && newStatus == SessionStatus.ENDED)   ||
+            (current == SessionStatus.PAUSED  && newStatus == SessionStatus.ENDED);
+
+        if (!validTransition) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Invalid status transition: " + current + " → " + newStatus);
+        }
+
+        session.setStatus(newStatus);
+        return sessionRepository.save(session);
+    }
+
+
+    /**
+     * Add a user to a session's participant list via game PIN.
+     *
+     * Idempotency: if the user is already a participant (re-join case),
+     * {@code Session.addParticipant()} is a Set no-op — no error is
+     * thrown and no duplicate row is inserted into session_participants.
+     *
+     * Corresponds to: POST /sessions/{sessionId}/participants
+     *
+     * @param sessionId target session
+     * @param gamePin   the PIN that must match {@code session.gamePin}
+     * @param userId    the user who wants to join
+     * @return the updated Session (with participants collection populated)
+     * @throws ResponseStatusException 404 if session or user not found
+     * @throws ResponseStatusException 400 if the PIN is wrong
+     */
+    public Session joinSession(Long sessionId, String gamePin, Long userId) {
+        Session session = sessionRepository.findById(sessionId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Session not found"));
+
+        if (!session.getGamePin().equals(gamePin)) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Invalid game pin");
+        }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "User not found"));
+
+        // Set.add() is a no-op when user is already present → idempotent
+        session.addParticipant(user);
+
+        Session saved = sessionRepository.save(session);
+        log.debug("User {} joined session {}", userId, sessionId);
+        return saved;
+    }
+
+
+    /**
+     * Remove a user from a session's participant list (soft-leave).
+     *
+     * The session record and all its data are preserved; only the join-
+     * table row is deleted. This satisfies the S5 acceptance criterion
+     * "The session itself is not affected by users leaving or rejoining."
+     *
+     * Corresponds to: PUT /sessions/{sessionId}/participants/{userId}
+     *
+     * @param sessionId session the user wants to leave
+     * @param userId    the user leaving
+     * @throws ResponseStatusException 404 if session or user not found
+     */
+    public void leaveSession(Long sessionId, Long userId) {
+        Session session = sessionRepository.findById(sessionId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Session or participant not found"));
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Session or participant not found"));
+
+        session.removeParticipant(user);
+        sessionRepository.save(session);
+        log.debug("User {} left session {}", userId, sessionId);
+    }
+
+
+    /**
+     * Return all current participants of a session.
+     *
+     * Corresponds to: GET /sessions/{sessionId}/participants
+     *
+     * @param sessionId the session to query
+     * @return unmodifiable set of participant Users
+     * @throws ResponseStatusException 404 if session not found
+     */
+    @Transactional(readOnly = true)
+    public Set<User> getParticipants(Long sessionId) {
+        Session session = sessionRepository.findById(sessionId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Session not found"));
+        return session.getParticipants();
     }
 }
