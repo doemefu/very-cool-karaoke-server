@@ -76,4 +76,32 @@ public class UserService {
         }
 
     }
+
+
+    /**
+     * Looks up the User who owns the given bearer token.
+     *
+     * Used by SessionsController to identify the authenticated caller
+     * for join, leave, and list-participants operations.
+     *
+     * @param token the UUID token sent by the client in the request header
+     * @return the matching User entity
+     * @throws ResponseStatusException 401 if the token is missing or unknown
+     */
+    public User getUserByToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Missing authentication token");
+        }
+
+        // Strip "Bearer " prefix if the client sends "Bearer <uuid>"
+        String rawToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+
+        User user = userRepository.findByToken(rawToken);
+        if (user == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Invalid or expired token");
+        }
+        return user;
+    }
 }

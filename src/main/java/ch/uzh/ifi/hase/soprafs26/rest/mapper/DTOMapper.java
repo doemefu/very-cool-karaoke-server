@@ -8,6 +8,12 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
+import ch.uzh.ifi.hase.soprafs26.entity.Session;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
 /**
  * DTOMapper
  * This class is responsible for generating classes that will automatically
@@ -36,6 +42,17 @@ public interface DTOMapper {
     @Mapping(source = "createdAt", target = "createdAt")
     UserGetDTO convertEntityToUserGetDTO(User user);
 
+    @Mapping(source = "admin",        target = "admin")
+    @Mapping(source = "participants",  target = "participants")
+    @Mapping(source = "createdAt",     target = "createdAt")
+    SessionGetDTO convertEntityToSessionGetDTO(Session session);
+
+    default OffsetDateTime map(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+        return localDateTime.atOffset(ZoneOffset.UTC);
+    }
     @Mapping(source = "id", target = "id")
     @Mapping(source = "username", target = "username")
     @Mapping(source = "createdAt", target = "createdAt")
