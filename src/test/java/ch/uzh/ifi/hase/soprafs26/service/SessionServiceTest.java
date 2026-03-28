@@ -59,6 +59,66 @@ class SessionServiceTest {
     }
 
 
+    // createSession
+
+    @Test
+    void createSession_validInput_returnsPersistedSession() {
+        when(sessionRepository.existsByGamePin(any())).thenReturn(false);
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> {
+            Session s = i.getArgument(0);
+            s.setId(10L);
+            return s;
+        });
+
+        Session result = sessionService.createSession("Friday Night Karaoke", "Fun session", admin);
+
+        assertNotNull(result);
+        assertEquals("Friday Night Karaoke", result.getName());
+        assertEquals("Fun session", result.getDescription());
+        assertEquals(admin, result.getAdmin());
+        assertNotNull(result.getGamePin());
+        assertEquals(6, result.getGamePin().length());
+        verify(sessionRepository, times(1)).save(any(Session.class));
+    }
+
+    @Test
+    void createSession_adminIsAddedAsParticipant() {
+        when(sessionRepository.existsByGamePin(any())).thenReturn(false);
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        Session result = sessionService.createSession("Test Session", null, admin);
+
+        assertTrue(result.getParticipants().contains(admin),
+                "Admin must be automatically added as a participant");
+    }
+
+    @Test
+    void createSession_defaultStatusIsCreated() {
+        when(sessionRepository.existsByGamePin(any())).thenReturn(false);
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        Session result = sessionService.createSession("Test Session", null, admin);
+
+        assertEquals(SessionStatus.CREATED, result.getStatus());
+    }
+
+    @Test
+    void createSession_pinCollision_retriesUntilUnique() {
+        // First generated pin collides, second is unique
+        when(sessionRepository.existsByGamePin(any()))
+                .thenReturn(true)
+                .thenReturn(false);
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        Session result = sessionService.createSession("Test Session", null, admin);
+
+        assertNotNull(result.getGamePin());
+        // existsByGamePin must have been called at least twice
+        verify(sessionRepository, atLeast(2)).existsByGamePin(any());
+        verify(sessionRepository, times(1)).save(any(Session.class));
+    }
+
+
     // joinSession
 
     @Test
