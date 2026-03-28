@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "sessions")
@@ -31,7 +32,7 @@ public class Session {
     @Column(nullable = false)
     private SessionStatus status = SessionStatus.CREATED;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
 
@@ -53,27 +54,6 @@ public class Session {
     )
 
     private Set<User> participants = new HashSet<>();
-
-    /*
-     ordered list of songs added to this session's queue.
-     */
-    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("id ASC")
-    private List<Song> playlist = new ArrayList<>();
-
-    /*
-     the song currently being performed (null if none).
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_song_id")
-    private Song currentSong;
-
-
-    /*
-     all voting rounds that have taken place in this session.
-    */
-    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<VotingRound> votingRounds = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -117,10 +97,6 @@ public class Session {
         this.participants.remove(user);
     }
 
-    public void setCurrentSong(Song song) {
-        this.currentSong = song;
-    }
-
 
     // getters and setters
     public Long getId() { return id; }
@@ -147,11 +123,4 @@ public class Session {
     public Set<User> getParticipants() { return participants; }
     public void setParticipants(Set<User> participants) { this.participants = participants; }
 
-    public List<Song> getPlaylist() { return playlist; }
-    public void setPlaylist(List<Song> playlist) { this.playlist = playlist; }
-
-    public Song getCurrentSong() { return currentSong; }
-
-    public List<VotingRound> getVotingRounds() { return votingRounds; }
-    public void setVotingRounds(List<VotingRound> votingRounds) { this.votingRounds = votingRounds; }
 }

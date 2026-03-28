@@ -38,7 +38,7 @@ public class SessionsController implements SessionsApi {
 
     @Override
     public ResponseEntity<SessionGetDTO> sessionsPost(SessionPostDTO sessionPostDTO) {
-        String token = request.getHeader("Authorization");
+        String token = request.getHeader("token");
         User admin = userService.getUserByToken(token);
 
         Session created = sessionService.createSession(
@@ -63,7 +63,7 @@ public class SessionsController implements SessionsApi {
     @Override
     public ResponseEntity<SessionGetDTO> sessionsSessionIdPut(Long sessionId,
                                                                SessionPutDTO sessionPutDTO) {
-        String token = request.getHeader("Authorization");
+        String token = request.getHeader("token");
         User requester = userService.getUserByToken(token);
 
         Session updated = sessionService.updateSessionStatus(
@@ -91,7 +91,7 @@ public class SessionsController implements SessionsApi {
             Long sessionId,
             JoinSessionDTO joinSessionDTO) {
 
-        String token = request.getHeader("Authorization");
+        String token = request.getHeader("token");
         User requester = userService.getUserByToken(token);
 
         Session updated = sessionService.joinSession(
