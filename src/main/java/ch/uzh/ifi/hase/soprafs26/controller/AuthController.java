@@ -5,6 +5,7 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.UserPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.UserTokenDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +17,11 @@ public class AuthController implements AuthApi {
     // AuthController(AuthService authService) { this.authService = authService; }
 
     private final UserService userService;
-    AuthController(UserService userService) { this.userService = userService; }
+    private final HttpServletRequest request;
+    AuthController(UserService userService, HttpServletRequest request) {
+        this.userService = userService;
+        this.request = request;
+    }
 
     // POST /users — Register a new user (S1)
     // Returns 201 + UserTokenDTO on success, 409 if username already taken
@@ -42,7 +47,11 @@ public class AuthController implements AuthApi {
     // Returns 204 on success, 401 if unauthorized
     @Override
     public ResponseEntity<Void> authLogoutPost() {
-        // TODO: extract token from Authorization header, delegate to authService.logout(token)
-        throw new UnsupportedOperationException("Not implemented yet");
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        userService.logoutUser(token);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
