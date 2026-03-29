@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository("sessionRepository")
 public interface SessionRepository extends JpaRepository<Session, Long> {
     Session findByGamePin(String gamePin);
+
+    boolean existsByGamePin(String gamePin);
 }
