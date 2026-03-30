@@ -835,13 +835,6 @@
       }
     },
     "schemas": {
-      "UserStatus": {
-        "type": "string",
-        "enum": [
-          "ONLINE",
-          "OFFLINE"
-        ]
-      },
       "SessionStatus": {
         "type": "string",
         "enum": [
@@ -907,9 +900,6 @@
           },
           "username": {
             "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/UserStatus"
           }
         }
       },
@@ -926,9 +916,6 @@
           "token": {
             "type": "string",
             "format": "uuid"
-          },
-          "status": {
-            "$ref": "#/components/schemas/UserStatus"
           }
         }
       },

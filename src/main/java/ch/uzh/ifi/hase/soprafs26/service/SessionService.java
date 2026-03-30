@@ -2,24 +2,19 @@ package ch.uzh.ifi.hase.soprafs26.service;
 
 import ch.uzh.ifi.hase.soprafs26.constant.SessionStatus;
 import ch.uzh.ifi.hase.soprafs26.entity.Session;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionPostDTO;
+import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
-import ch.uzh.ifi.hase.soprafs26.entity.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Set;
-
-import java.time.OffsetDateTime;
-import java.util.Random;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -48,11 +43,18 @@ public class SessionService {
         session.setAdmin(admin);
         // Admin is automatically a participant of their own session
         session.addParticipant(admin);
+
+        String gamePin;
+        do {
+            gamePin = UUID.randomUUID().toString().replace("-", "").substring(0, 6);
+        } while (sessionRepository.existsByGamePin(gamePin));
+
+        session.setGamePin(gamePin);
+
         Session saved = sessionRepository.save(session);
         log.debug("Created session {} with admin {}", saved.getId(), admin.getId());
         return saved;
     }
-
 
     public Session getSessionById(Long sessionId) {
         return sessionRepository.findById(sessionId)
