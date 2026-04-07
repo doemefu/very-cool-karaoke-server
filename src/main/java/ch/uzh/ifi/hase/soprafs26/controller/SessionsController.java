@@ -59,6 +59,12 @@ public class SessionsController implements SessionsApi {
         return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(session));
     }
 
+    @org.springframework.web.bind.annotation.GetMapping("/sessions/pin/{gamePin}")
+    public ResponseEntity<SessionGetDTO> getSessionByPin(@org.springframework.web.bind.annotation.PathVariable String gamePin) {
+        Session session = sessionService.getSessionByPin(gamePin);
+        return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(session));
+    }
+
 
     @Override
     public ResponseEntity<SessionGetDTO> sessionsSessionIdPut(Long sessionId,

@@ -62,6 +62,14 @@ public class SessionService {
                 HttpStatus.NOT_FOUND, "Session not found"));
     }
 
+    public Session getSessionByPin(String gamePin) {
+        Session session = sessionRepository.findByGamePin(gamePin);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found");
+        }
+        return session;
+    }
+
 
     public Session updateSessionStatus(Long sessionId, SessionStatus newStatus, Long requesterId) {
         Session session = getSessionById(sessionId);
