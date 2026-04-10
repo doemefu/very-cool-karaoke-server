@@ -16,8 +16,6 @@ public class SongPostDTO {
 
     private String spotifyId = null;
 
-    private String geniusId = null;
-
     private String title;
 
     private String artist;
@@ -53,27 +51,6 @@ public class SongPostDTO {
 
     public void setSpotifyId(String spotifyId) {
         this.spotifyId = spotifyId;
-    }
-
-    public SongPostDTO geniusId(String geniusId) {
-        this.geniusId = geniusId;
-        return this;
-    }
-
-    /**
-     * Get geniusId
-     *
-     * @return geniusId
-     */
-
-    @Schema(name = "geniusId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @JsonProperty("geniusId")
-    public String getGeniusId() {
-        return geniusId;
-    }
-
-    public void setGeniusId(String geniusId) {
-        this.geniusId = geniusId;
     }
 
     public SongPostDTO title(String title) {
@@ -128,21 +105,19 @@ public class SongPostDTO {
         }
         SongPostDTO songPostDTO = (SongPostDTO) o;
         return Objects.equals(this.spotifyId, songPostDTO.spotifyId) &&
-                Objects.equals(this.geniusId, songPostDTO.geniusId) &&
                 Objects.equals(this.title, songPostDTO.title) &&
                 Objects.equals(this.artist, songPostDTO.artist);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(spotifyId, geniusId, title, artist);
+        return Objects.hash(spotifyId, title, artist);
     }
 
     @Override
     public String toString() {
         String sb = "class SongPostDTO {\n" +
                 "    spotifyId: " + toIndentedString(spotifyId) + "\n" +
-                "    geniusId: " + toIndentedString(geniusId) + "\n" +
                 "    title: " + toIndentedString(title) + "\n" +
                 "    artist: " + toIndentedString(artist) + "\n" +
                 "}";

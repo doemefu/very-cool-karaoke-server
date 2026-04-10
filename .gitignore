@@ -44,3 +44,4 @@ local.properties
 .xcode*
 
 /bin
+/.claude/
