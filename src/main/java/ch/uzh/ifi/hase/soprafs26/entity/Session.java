@@ -60,14 +60,30 @@ public class Session {
     private Set<User> participants = new HashSet<>();
 
     public void start() {
+        if (this.status != SessionStatus.CREATED) {
+            throw new IllegalStateException("Can only start from LOBBY");
+        }
         this.status = SessionStatus.ACTIVE;
     }
 
     public void pause() {
+        if (this.status != SessionStatus.ACTIVE) {
+            throw new IllegalStateException("Can only pause from ACTIVE");
+        }
         this.status = SessionStatus.PAUSED;
     }
 
+    public void resume() {
+        if (this.status != SessionStatus.PAUSED) {
+            throw new IllegalStateException("Can only resume from PAUSED");
+        }
+        this.status = SessionStatus.ACTIVE;
+    }
+
     public void end() {
+        if (this.status != SessionStatus.ACTIVE && this.status != SessionStatus.PAUSED) {
+            throw new IllegalStateException("Can only end from ACTIVE or PAUSED");
+        }
         this.status = SessionStatus.ENDED;
     }
 
