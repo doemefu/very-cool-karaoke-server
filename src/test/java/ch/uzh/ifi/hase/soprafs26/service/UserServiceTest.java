@@ -78,4 +78,48 @@ public class UserServiceTest {
 		assertThrows(ResponseStatusException.class, () -> userService.createUser(testUser));
 	}
 
+    @Test
+    public void changePassword_success() {
+        testUser.setToken("valid-token");
+        testUser.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("oldPass"));
+
+        Mockito.when(userRepository.findByToken("valid-token")).thenReturn(testUser);
+
+        userService.changePassword(1L, "valid-token", "oldPass", "newPass");
+
+        Mockito.verify(userRepository, Mockito.times(1)).save(Mockito.any());
+    }
+
+    @Test
+    public void changePassword_wrongCurrentPassword_throws403() {
+        testUser.setToken("valid-token");
+        testUser.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("oldPass"));
+
+        Mockito.when(userRepository.findByToken("valid-token")).thenReturn(testUser);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                userService.changePassword(1L, "valid-token", "wrongPass", "newPass"));
+        assertEquals(403, ex.getStatusCode().value());
+    }
+
+    @Test
+    public void changePassword_wrongUser_throws403() {
+        testUser.setToken("valid-token");
+
+        Mockito.when(userRepository.findByToken("valid-token")).thenReturn(testUser);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                userService.changePassword(999L, "valid-token", "oldPass", "newPass"));
+        assertEquals(403, ex.getStatusCode().value());
+    }
+
+    @Test
+    public void changePassword_invalidToken_throws401() {
+        Mockito.when(userRepository.findByToken("bad-token")).thenReturn(null);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                userService.changePassword(1L, "bad-token", "oldPass", "newPass"));
+        assertEquals(401, ex.getStatusCode().value());
+    }
+
 }

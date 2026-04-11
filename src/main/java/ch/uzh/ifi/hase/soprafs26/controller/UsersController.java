@@ -2,6 +2,9 @@ package ch.uzh.ifi.hase.soprafs26.controller;
 
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.UserPutDTO;
+import ch.uzh.ifi.hase.soprafs26.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -10,15 +13,27 @@ import java.util.List;
 @RestController
 public class UsersController implements UsersApi {
 
-    // TODO: inject UserService here
-    // UsersController(UserService userService) { this.userService = userService; }
+    private final UserService userService;
+    private final HttpServletRequest request;
+
+    @Autowired
+    public UsersController(UserService userService, HttpServletRequest request) {
+        this.userService = userService;
+        this.request = request;
+    }
 
     // PUT /users/{userId} — Update user profile, e.g. change password (S2)
     // Returns 204 on success, 400 if invalid input, 403 if editing another user, 404 if not found
     @Override
     public ResponseEntity<Void> usersUserIdPut(Long userId, UserPutDTO userPutDTO) {
-        // TODO: verify caller is the same user (auth), delegate to userService.updateUser(userId, userPutDTO)
-        throw new UnsupportedOperationException("Not implemented yet");
+        String token = request.getHeader("token");
+        userService.changePassword(
+                userId,
+                token,
+                userPutDTO.getOldPassword(),
+                userPutDTO.getNewPassword()
+        );
+        return ResponseEntity.noContent().build();
     }
 
     // GET /users/{userId}/sessions — Get session history for a user (S13)
