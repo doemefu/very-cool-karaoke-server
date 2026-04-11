@@ -4,9 +4,11 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -71,6 +73,56 @@ class SpotifyServiceTest {
         assertEquals("ABBA", track.artist());
         assertEquals("http://img.test/art.jpg", track.albumArt());
         assertEquals(230000, track.durationMs());
+    }
+
+    @Test
+    void search_spotifyReturns401_refreshesTokenAndRetries() {
+        String tokenResponse = """
+                {"access_token":"refreshed-token","token_type":"Bearer","expires_in":3600}
+                """;
+        String spotifyResponse = "{\"tracks\":{\"items\":[]}}";
+
+        spotifyService.setCredentials("id", "secret");
+
+        // First search → 401
+        mockServer.expect(requestTo(Matchers.containsString("/v1/search")))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+        // Token refresh
+        mockServer.expect(requestTo("https://accounts.spotify.com/api/token"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(tokenResponse, MediaType.APPLICATION_JSON));
+        // Retry search → success
+        mockServer.expect(requestTo(Matchers.containsString("/v1/search")))
+                .andRespond(withSuccess(spotifyResponse, MediaType.APPLICATION_JSON));
+
+        List<SpotifyTrack> results = spotifyService.search("ABBA");
+
+        assertTrue(results.isEmpty());
+        assertEquals("refreshed-token", spotifyService.getAccessToken());
+    }
+
+    @Test
+    void search_spotifyReturns401TwiceAfterRetry_throwsBadGateway() {
+        String tokenResponse = """
+                {"access_token":"refreshed-token","token_type":"Bearer","expires_in":3600}
+                """;
+
+        spotifyService.setCredentials("id", "secret");
+
+        // First search → 401
+        mockServer.expect(requestTo(Matchers.containsString("/v1/search")))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+        // Token refresh
+        mockServer.expect(requestTo("https://accounts.spotify.com/api/token"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(tokenResponse, MediaType.APPLICATION_JSON));
+        // Retry search → 401 again
+        mockServer.expect(requestTo(Matchers.containsString("/v1/search")))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> spotifyService.search("ABBA"));
+        assertEquals(HttpStatus.BAD_GATEWAY, ex.getStatusCode());
     }
 
     @Test
