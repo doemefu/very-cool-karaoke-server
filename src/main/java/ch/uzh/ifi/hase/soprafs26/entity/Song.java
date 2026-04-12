@@ -31,4 +31,17 @@ public class Song {
 
     @Column(columnDefinition = "TEXT") // To escape char limit
     private String lyrics;
+
+    // to track the status of the song
+    @Column(nullable = false)
+    private Boolean performed = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "session_id", nullable = false)
+    private Session session;
+
+    // to mark the song as performed
+    public void markPerformed() {
+        this.performed = true;
+    }
 }
