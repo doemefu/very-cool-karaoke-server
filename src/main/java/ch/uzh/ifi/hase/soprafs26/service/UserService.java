@@ -76,6 +76,24 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public void changePassword(Long userId, String token, String currentPassword, String newPassword) {
+        User user = getUserByToken(token);
+
+        if (!user.getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Can only change your own password");
+        }
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+        if (!encoder.matches(currentPassword, user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Current password is wrong");
+        }
+
+        user.setPassword(encoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+
     private void checkIfUserExists(User userToBeCreated) {
         User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
 
