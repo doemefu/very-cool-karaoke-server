@@ -95,5 +95,15 @@ public class Session {
         this.participants.remove(user);
     }
 
+    public void addSong(Song song) {
+        playlist.add(song);       
+        song.setSession(this);    
+    }
+
+    public void removeSong(Song song) {
+        playlist.remove(song);    
+        song.setSession(null);    
+    }
+
 
 }
