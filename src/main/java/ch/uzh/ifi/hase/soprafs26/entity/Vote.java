@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Getter
 @Setter
@@ -34,6 +35,7 @@ public class Vote {
     @JoinColumn(name = "voted_song_id", nullable = false)
     private Song votedSong;
 
-    @Column(nullable = false)
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     private LocalDateTime castAt;
 }

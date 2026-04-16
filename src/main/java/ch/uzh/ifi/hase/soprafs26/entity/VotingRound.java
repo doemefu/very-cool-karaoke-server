@@ -41,4 +41,7 @@ public class VotingRound {
     )
     private List<Song> candidates = new ArrayList<>();
 
+    @OneToMany(mappedBy = "votingRound", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Vote> votes = new ArrayList<>();
+
 }
