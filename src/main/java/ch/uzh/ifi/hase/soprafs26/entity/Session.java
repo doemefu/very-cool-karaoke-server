@@ -9,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List; 
 
 @Setter
 @Getter
@@ -59,6 +61,12 @@ public class Session {
 
     private Set<User> participants = new HashSet<>();
 
+
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    private List<Song> playlist = new ArrayList<>();
+
+
     public void start() {
         this.status = SessionStatus.ACTIVE;
     }
@@ -85,6 +93,16 @@ public class Session {
     */
     public void removeParticipant(User user) {
         this.participants.remove(user);
+    }
+
+    public void addSong(Song song) {
+        playlist.add(song);       
+        song.setSession(this);    
+    }
+
+    public void removeSong(Song song) {
+        playlist.remove(song);    
+        song.setSession(null);    
     }
 
 
