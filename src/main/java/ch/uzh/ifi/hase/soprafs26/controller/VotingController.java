@@ -1,8 +1,14 @@
 package ch.uzh.ifi.hase.soprafs26.controller;
 
+import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotePostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
+import ch.uzh.ifi.hase.soprafs26.service.UserService;
+import ch.uzh.ifi.hase.soprafs26.service.VotingService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -10,8 +16,15 @@ import java.util.List;
 @RestController
 public class VotingController implements VotingApi {
 
-    // TODO: inject VotingService here
-    // VotingController(VotingService votingService) { this.votingService = votingService; }
+    private final UserService userService;
+    private final VotingService votingService;
+    private final HttpServletRequest request;
+
+    public VotingController(UserService userService, VotingService votingService, HttpServletRequest request) {
+        this.userService = userService;
+        this.votingService = votingService;
+        this.request = request;
+    }
 
     // GET /sessions/{sessionId}/votingRounds — List all voting rounds of a session
     // Voting rounds are started automatically by the server when a song ends
@@ -35,8 +48,11 @@ public class VotingController implements VotingApi {
     // Returns 201 on success
     // Returns 400 if song is not a candidate, 409 if user already voted, 410 if round is CLOSED
     @Override
-    public ResponseEntity<Void> sessionsSessionIdVotingRoundsRoundIdVotesPost(Long sessionId, Long roundId, VotePostDTO votePostDTO) {
-        // TODO: verify user hasn't voted yet, delegate to votingService.castVote(sessionId, roundId, votePostDTO)
-        throw new UnsupportedOperationException("Not implemented yet");
+    public ResponseEntity<Void> sessionsSessionIdVotingRoundsRoundIdVotesPost(
+            Long sessionId, Long roundId, VotePostDTO votePostDTO) {
+        String token = request.getHeader("token");
+        User voter = userService.getUserByToken(token);
+        votingService.castVote(sessionId, roundId, votePostDTO.getSongId(), voter);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

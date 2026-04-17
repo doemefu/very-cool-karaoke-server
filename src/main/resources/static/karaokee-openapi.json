@@ -756,6 +756,12 @@
           },
           "410": {
             "description": "Voting round is CLOSED"
+          },
+          "403": {
+            "description": "User is not a session participant"
+          },
+          "404": {
+            "description": "Voting round or song not found"
           }
         }
       }
