@@ -977,6 +977,10 @@
             "items": {
               "$ref": "#/components/schemas/UserGetDTO"
             }
+          },
+          "requiresSongSelection": {
+            "type": "boolean",
+            "description": "True only in the join endpoint response — indicates the caller still needs to add their initial song before interacting with the session. Null in all other context."
           }
         }
       },

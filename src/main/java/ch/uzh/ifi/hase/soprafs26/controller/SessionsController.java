@@ -100,7 +100,13 @@ public class SessionsController implements SessionsApi {
             requester.getId()
         );
 
-        return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(updated));
+        SessionGetDTO dto = DTOMapper.INSTANCE.convertEntityToSessionGetDTO(updated);
+
+        dto.setRequiresSongSelection(
+            sessionService.requiresSongSelection(sessionId, requester.getId())
+        );
+
+        return ResponseEntity.ok(dto);
     }
 
 
