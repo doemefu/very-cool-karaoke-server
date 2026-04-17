@@ -123,7 +123,7 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Logout (invalidates token, sets status OFFLINE)",
+        "summary": "Logout (invalidates token)",
         "responses": {
           "204": {
             "description": "Logged out successfully"

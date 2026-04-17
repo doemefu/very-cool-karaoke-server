@@ -190,10 +190,6 @@ components:
 
   schemas:
 
-    UserStatus:
-      type: string
-      enum: [ONLINE, OFFLINE]
-
     SessionStatus:
       type: string
       enum: [CREATED, ACTIVE, PAUSED, ENDED]
@@ -213,8 +209,6 @@ components:
           type: integer
         username:
           type: string
-        status:
-          $ref: '#/components/schemas/UserStatus'
 
     SessionDTO:
       type: object
