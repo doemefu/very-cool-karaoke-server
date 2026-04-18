@@ -129,7 +129,7 @@ public class SessionsController implements SessionsApi {
     }
 
     /**
-     * PUT /sessions/{sessionId}/participants/{userId}
+     * DELETE /sessions/{sessionId}/participants/{userId}
      *
      * Removes the user from the active participant list (soft-leave).
      * The session itself is unaffected — all data is preserved.
@@ -139,8 +139,8 @@ public class SessionsController implements SessionsApi {
      * @return 204 No Content
      */
     @Override
-    public ResponseEntity<Void> sessionsSessionIdParticipantsUserIdPut(Long sessionId,
-                                                                        Long userId) {
+    public ResponseEntity<Void> sessionsSessionIdParticipantsUserIdDelete(Long sessionId,
+                                                                           Long userId) {
         sessionService.leaveSession(sessionId, userId);
         return ResponseEntity.noContent().build();
     }

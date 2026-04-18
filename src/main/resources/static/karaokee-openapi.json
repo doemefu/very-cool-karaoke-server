@@ -407,7 +407,7 @@
       }
     },
     "/sessions/{sessionId}/participants/{userId}": {
-      "put": {
+      "delete": {
         "tags": [
           "Sessions"
         ],
