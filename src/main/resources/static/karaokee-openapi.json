@@ -235,6 +235,39 @@
         }
       }
     },
+    "/sessions/pin/{gamePin}": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Look up a session by its game pin",
+        "parameters": [
+          {
+            "name": "gamePin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionGetDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No session with that pin"
+          }
+        }
+      }
+    },
     "/sessions/{sessionId}": {
       "get": {
         "tags": [

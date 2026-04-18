@@ -59,6 +59,12 @@ public class SessionsController implements SessionsApi {
         return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(session));
     }
 
+    @Override
+    public ResponseEntity<SessionGetDTO> sessionsPinGamePinGet(String gamePin) {
+        Session session = sessionService.getSessionByPin(gamePin);
+        return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(session));
+    }
+
 
     @Override
     public ResponseEntity<SessionGetDTO> sessionsSessionIdPut(Long sessionId,
