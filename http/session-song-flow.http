@@ -1,0 +1,490 @@
+###
+# Backend E2E smoke flow for IntelliJ HTTP Client
+# Env file: http/http-client.env.json  →  choose `local` or `prod` in IntelliJ
+#
+# Run steps IN ORDER (1 → 27). Each step captures variables that later steps need.
+# Steps marked ⏳ hit a controller stub whose service is not yet implemented → expect 501.
+# Steps marked ✅ are fully implemented → expect 2xx.
+#
+# If register returns 409, the user already exists — the Login step will re-capture the token.
+
+# ──────────────────────────────────────────────────────────────
+# PHASE 1 – Authentication (S1)
+# ──────────────────────────────────────────────────────────────
+
+### 1) ✅ Register HOST user (S1)
+# Returns 201 on first run, 409 if user already exists — both are fine.
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+> {%
+  client.test("register HOST: 201 created or 409 already exists", function() {
+    client.assert(response.status === 201 || response.status === 409,
+      "Expected 201 or 409, got " + response.status);
+  });
+
+  if (response.status === 201) {
+    client.global.set("hostToken", response.body.token);
+    client.global.set("hostUserId", response.body.id);
+  }
+%}
+
+### 2) ✅ Login HOST user (S1)
+# Always re-login so hostToken is fresh for all subsequent steps.
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+> {%
+  client.test("login HOST: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(response.body.token, "Expected token in response body");
+  });
+
+  client.global.set("hostToken", response.body.token);
+  client.global.set("hostUserId", response.body.id);
+%}
+
+### 3) ✅ Register GUEST user (S1)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "{{guestUsername}}",
+  "password": "{{guestPassword}}"
+}
+
+> {%
+  client.test("register GUEST: 201 created or 409 already exists", function() {
+    client.assert(response.status === 201 || response.status === 409,
+      "Expected 201 or 409, got " + response.status);
+  });
+
+  if (response.status === 201) {
+    client.global.set("guestToken", response.body.token);
+    client.global.set("guestUserId", response.body.id);
+  }
+%}
+
+### 4) ✅ Login GUEST user (S1)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{guestUsername}}",
+  "password": "{{guestPassword}}"
+}
+
+> {%
+  client.test("login GUEST: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(response.body.token, "Expected token in response body");
+  });
+
+  client.global.set("guestToken", response.body.token);
+  client.global.set("guestUserId", response.body.id);
+%}
+
+# ──────────────────────────────────────────────────────────────
+# PHASE 2 – Session Lifecycle (S3, S4)
+# ──────────────────────────────────────────────────────────────
+
+### 5) ✅ Create session as HOST (S3)
+POST {{baseUrl}}/sessions
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "name": "{{sessionName}}",
+  "description": "{{sessionDescription}}"
+}
+
+> {%
+  client.test("create session: 201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+    client.assert(response.body.id, "Expected session id in response");
+    client.assert(response.body.gamePin, "Expected gamePin in response");
+  });
+
+  client.global.set("sessionId", response.body.id);
+  client.global.set("gamePin", response.body.gamePin);
+%}
+
+### 6) ✅ Get session by ID (S3)
+GET {{baseUrl}}/sessions/{{sessionId}}
+token: {{hostToken}}
+
+> {%
+  client.test("get session by ID: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(response.body.id == client.global.get("sessionId"), "Session ID mismatch");
+  });
+%}
+
+### 7) ✅ Start session — ACTIVE (S4)
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+> {%
+  client.test("start session: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+### 8) ✅ Pause session — PAUSED (S4)
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "PAUSED"
+}
+
+> {%
+  client.test("pause session: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+### 9) ✅ Resume session — ACTIVE again (S4)
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+> {%
+  client.test("resume session: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+# ──────────────────────────────────────────────────────────────
+# PHASE 3 – Participants (S5)
+# ──────────────────────────────────────────────────────────────
+
+### 10) ✅ GUEST joins session via game pin (S5)
+POST {{baseUrl}}/sessions/{{sessionId}}/participants
+Content-Type: application/json
+token: {{guestToken}}
+
+{
+  "gamePin": "{{gamePin}}"
+}
+
+> {%
+  client.test("guest joins session: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+### 11) ✅ List session participants (S5)
+GET {{baseUrl}}/sessions/{{sessionId}}/participants
+token: {{hostToken}}
+
+> {%
+  client.test("list participants: 200 OK with at least HOST and GUEST", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(Array.isArray(response.body), "Expected array of participants");
+    client.assert(response.body.length >= 2, "Expected at least 2 participants (host + guest)");
+  });
+%}
+
+### 12) ✅ Get session by game pin (S5)
+GET {{baseUrl}}/sessions/pin/{{gamePin}}
+token: {{guestToken}}
+
+> {%
+  client.test("get session by game pin: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(response.body.gamePin == client.global.get("gamePin"), "gamePin mismatch");
+  });
+%}
+
+# ──────────────────────────────────────────────────────────────
+# PHASE 4 – Songs / Queue (S6, S10, S11)
+# ──────────────────────────────────────────────────────────────
+
+### 13) ✅ HOST searches for songs — query 1 (S11)
+GET {{baseUrl}}/songs/search?query={{searchQuery1}}
+token: {{hostToken}}
+
+> {%
+  client.test("song search query 1: 200 OK with results", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(Array.isArray(response.body), "Expected array of songs");
+    client.assert(response.body.length > 0, "Expected at least one search result");
+  });
+
+  // Prefer a song with lyrics available so the karaoke feature works
+  const picked = response.body.find(song => song.lyricsAvailable) || response.body[0];
+  client.global.set("song1SpotifyId", picked.spotifyId);
+  client.global.set("song1Title", picked.title);
+  client.global.set("song1Artist", picked.artist);
+  client.global.set("song1AlbumArt", picked.albumArt || "");
+  client.global.set("song1DurationMs", String(picked.durationMs));
+%}
+
+### 14) ✅ HOST adds song 1 to the queue (S6/S10)
+POST {{baseUrl}}/sessions/{{sessionId}}/songs
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "spotifyId": "{{song1SpotifyId}}",
+  "title": "{{song1Title}}",
+  "artist": "{{song1Artist}}",
+  "albumArt": "{{song1AlbumArt}}",
+  "durationMs": {{song1DurationMs}}
+}
+
+> {%
+  client.test("add song 1 (HOST): 201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+    client.assert(response.body.id, "Expected song id in response");
+  });
+
+  client.global.set("song1Id", response.body.id);
+%}
+
+### 15) ✅ GUEST searches for songs — query 2 (S11)
+GET {{baseUrl}}/songs/search?query={{searchQuery2}}
+token: {{guestToken}}
+
+> {%
+  client.test("song search query 2: 200 OK with results", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(Array.isArray(response.body), "Expected array of songs");
+    client.assert(response.body.length > 0, "Expected at least one search result");
+  });
+
+  const picked = response.body.find(song => song.lyricsAvailable) || response.body[0];
+  client.global.set("song2SpotifyId", picked.spotifyId);
+  client.global.set("song2Title", picked.title);
+  client.global.set("song2Artist", picked.artist);
+  client.global.set("song2AlbumArt", picked.albumArt || "");
+  client.global.set("song2DurationMs", String(picked.durationMs));
+%}
+
+### 16) ✅ GUEST adds song 2 to the queue (S6/S10)
+POST {{baseUrl}}/sessions/{{sessionId}}/songs
+Content-Type: application/json
+token: {{guestToken}}
+
+{
+  "spotifyId": "{{song2SpotifyId}}",
+  "title": "{{song2Title}}",
+  "artist": "{{song2Artist}}",
+  "albumArt": "{{song2AlbumArt}}",
+  "durationMs": {{song2DurationMs}}
+}
+
+> {%
+  client.test("add song 2 (GUEST): 201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+    client.assert(response.body.id, "Expected song id in response");
+  });
+
+  client.global.set("song2Id", response.body.id);
+%}
+
+### 17) ⏳ Get session queue — both songs should appear (S6/S10) [Issue #50]
+# Controller stub exists. Returns 501 until Issue #50 is implemented.
+GET {{baseUrl}}/sessions/{{sessionId}}/songs
+token: {{hostToken}}
+
+> {%
+  client.test("get queue: 200 OK or 501 pending (Issue #50)", function() {
+    client.assert(response.status === 200 || response.status === 501,
+      "Expected 200 or 501, got " + response.status);
+  });
+
+  if (response.status === 200) {
+    client.assert(Array.isArray(response.body), "Expected array of queued songs");
+    client.assert(response.body.length >= 2, "Expected at least 2 songs in queue");
+  }
+%}
+
+# ──────────────────────────────────────────────────────────────
+# PHASE 5 – Voting (S12, S14)
+# ──────────────────────────────────────────────────────────────
+
+### 18) ⏳ List all voting rounds for the session (S12/S14)
+# Controller stub exists. Returns 501 if not yet implemented.
+GET {{baseUrl}}/sessions/{{sessionId}}/votingRounds
+token: {{hostToken}}
+
+> {%
+  client.test("list voting rounds: 200 OK or 501 pending", function() {
+    client.assert(response.status === 200 || response.status === 501,
+      "Expected 200 or 501, got " + response.status);
+  });
+%}
+
+### 19) ✅ GUEST casts a vote in voting round (S12)
+# roundId defaults to 1 (see env file). Adjust if your round ID differs.
+POST {{baseUrl}}/sessions/{{sessionId}}/votingRounds/{{roundId}}/votes
+Content-Type: application/json
+token: {{guestToken}}
+
+{
+  "songId": {{song2Id}}
+}
+
+> {%
+  client.test("cast vote: 200 or 201", function() {
+    client.assert(response.status === 200 || response.status === 201,
+      "Expected 200 or 201, got " + response.status);
+  });
+%}
+
+### 20) ✅ Get voting round details / leaderboard (S14)
+GET {{baseUrl}}/sessions/{{sessionId}}/votingRounds/{{roundId}}
+token: {{hostToken}}
+
+> {%
+  client.test("get voting round: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+# ──────────────────────────────────────────────────────────────
+# PHASE 6 – Teardown & History (S2, S4, S5, S13, S15)
+# ──────────────────────────────────────────────────────────────
+
+### 21) ✅ Session history for HOST (S13)
+GET {{baseUrl}}/users/{{hostUserId}}/sessions
+token: {{hostToken}}
+
+> {%
+  client.test("session history: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+    client.assert(Array.isArray(response.body), "Expected array of sessions");
+  });
+%}
+
+### 22) ✅ GUEST leaves the session (S5)
+DELETE {{baseUrl}}/sessions/{{sessionId}}/participants/{{guestUserId}}
+token: {{guestToken}}
+
+> {%
+  client.test("guest leaves session: 200 or 204", function() {
+    client.assert(response.status === 200 || response.status === 204,
+      "Expected 200 or 204, got " + response.status);
+  });
+%}
+
+### 23) ✅ HOST ends the session (S4)
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "ENDED"
+}
+
+> {%
+  client.test("end session: 200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+%}
+
+### 24) ⏳ Session review after session ended (S15) [Issue #52]
+# Controller stub exists. Returns 501 until Issue #52 is implemented.
+GET {{baseUrl}}/sessions/{{sessionId}}/review
+token: {{hostToken}}
+
+> {%
+  client.test("session review: 200 OK or 501 pending (Issue #52)", function() {
+    client.assert(response.status === 200 || response.status === 501,
+      "Expected 200 or 501, got " + response.status);
+  });
+%}
+
+### 25) ✅ Change HOST password (S2)
+# WARNING: After this succeeds the login password becomes {{newPassword}}.
+# Re-run step 2 with newPassword to refresh the token if needed.
+PUT {{baseUrl}}/users/{{hostUserId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "oldPassword": "{{password}}",
+  "newPassword": "{{newPassword}}"
+}
+
+> {%
+  client.test("change password: 200 or 204", function() {
+    client.assert(response.status === 200 || response.status === 204,
+      "Expected 200 or 204, got " + response.status);
+  });
+%}
+
+### 26) ✅ Logout HOST (S1)
+POST {{baseUrl}}/auth/logout
+token: {{hostToken}}
+
+> {%
+  client.test("logout HOST: 200 or 204", function() {
+    client.assert(response.status === 200 || response.status === 204,
+      "Expected 200 or 204, got " + response.status);
+  });
+%}
+
+### 27) ✅ Logout GUEST (S1)
+POST {{baseUrl}}/auth/logout
+token: {{guestToken}}
+
+> {%
+  client.test("logout GUEST: 200 or 204", function() {
+    client.assert(response.status === 200 || response.status === 204,
+      "Expected 200 or 204, got " + response.status);
+  });
+%}
+
+# ──────────────────────────────────────────────────────────────
+# APPENDIX – Pending endpoints (not yet in main flow)
+# Controller stubs exist for all of these — service implementations are open issues.
+# ──────────────────────────────────────────────────────────────
+
+### A1) ⏳ Current song being performed (S8) — stub only, no open issue
+GET {{baseUrl}}/sessions/{{sessionId}}/songs/current
+token: {{hostToken}}
+
+### A2) ⏳ Skip current song (S7) — stub only, no open issue
+POST {{baseUrl}}/sessions/{{sessionId}}/songs/skip
+token: {{hostToken}}
+
+### A3) ⏳ Remove a song from the queue (S7) [Issue #33]
+DELETE {{baseUrl}}/sessions/{{sessionId}}/songs/{{song1Id}}
+token: {{hostToken}}
+
+### A4) ⏳ Mark song as played [Issue #42]
+PUT {{baseUrl}}/sessions/{{sessionId}}/songs/{{song2Id}}/played
+token: {{hostToken}}
+
+### A5) ⏳ Send audience reaction (S9) [Issue #9 — WebSocket via STOMP, not REST]
+# This endpoint may not have a REST mapping; reactions go via /ws topic.
+POST {{baseUrl}}/sessions/{{sessionId}}/reactions
+Content-Type: application/json
+token: {{guestToken}}
+
+{
+  "type": "CLAP"
+}

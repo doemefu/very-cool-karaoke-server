@@ -47,10 +47,7 @@ public class AuthController implements AuthApi {
     // Returns 204 on success, 401 if unauthorized
     @Override
     public ResponseEntity<Void> authLogoutPost() {
-        String token = request.getHeader("Authorization");
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
+        String token = request.getHeader("token");
         userService.logoutUser(token);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

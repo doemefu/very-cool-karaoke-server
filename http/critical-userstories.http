@@ -1,0 +1,233 @@
+###
+# Critical user-story endpoint catalog
+# Quick-access reference organized by user story (S1–S15).
+#
+# ✅ = fully implemented   ⏳ = controller stub exists, service pending   ❌ = not started
+#
+# Variables are captured automatically when you run session-song-flow.http in order.
+# You can also set them manually in IntelliJ environment variables.
+
+# ──────────────────────────────────────────────────────────────
+# S1 – User Management (Register, Login, Logout)
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S1 Register
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### ✅ S1 Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### ✅ S1 Logout
+POST {{baseUrl}}/auth/logout
+token: {{hostToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S2 – Change Password
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S2 Change password
+PUT {{baseUrl}}/users/{{hostUserId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "oldPassword": "{{password}}",
+  "newPassword": "{{newPassword}}"
+}
+
+# ──────────────────────────────────────────────────────────────
+# S3 – Create Session
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S3 Create session
+POST {{baseUrl}}/sessions
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "name": "{{sessionName}}",
+  "description": "{{sessionDescription}}"
+}
+
+### ✅ S3 Get session by ID
+GET {{baseUrl}}/sessions/{{sessionId}}
+token: {{hostToken}}
+
+### ✅ S3 Get session by game pin
+GET {{baseUrl}}/sessions/pin/{{gamePin}}
+token: {{hostToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S4 – Start, Pause, Resume, End Session
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S4 Start session
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+### ✅ S4 Pause session
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "PAUSED"
+}
+
+### ✅ S4 Resume session
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+### ✅ S4 End session
+PUT {{baseUrl}}/sessions/{{sessionId}}
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "status": "ENDED"
+}
+
+# ──────────────────────────────────────────────────────────────
+# S5 – Join, List Participants, Leave Session
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S5 Join session (guest uses game pin)
+POST {{baseUrl}}/sessions/{{sessionId}}/participants
+Content-Type: application/json
+token: {{guestToken}}
+
+{
+  "gamePin": "{{gamePin}}"
+}
+
+### ✅ S5 List participants
+GET {{baseUrl}}/sessions/{{sessionId}}/participants
+token: {{hostToken}}
+
+### ✅ S5 Leave session
+DELETE {{baseUrl}}/sessions/{{sessionId}}/participants/{{guestUserId}}
+token: {{guestToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S6/S10 – Search and Add Songs to Queue
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S11 Search songs
+GET {{baseUrl}}/songs/search?query={{searchQuery1}}
+token: {{hostToken}}
+
+### ✅ S6/S10 Add song to queue
+POST {{baseUrl}}/sessions/{{sessionId}}/songs
+Content-Type: application/json
+token: {{hostToken}}
+
+{
+  "spotifyId": "{{song1SpotifyId}}",
+  "title": "{{song1Title}}",
+  "artist": "{{song1Artist}}",
+  "albumArt": "{{song1AlbumArt}}",
+  "durationMs": {{song1DurationMs}}
+}
+
+### ⏳ S6/S10 Get session queue [Issue #50 — implementation pending]
+GET {{baseUrl}}/sessions/{{sessionId}}/songs
+token: {{hostToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S7 – Skip / Remove Songs (host admin only)
+# ──────────────────────────────────────────────────────────────
+
+### ⏳ S7 Skip current song [stub only — no open issue yet]
+POST {{baseUrl}}/sessions/{{sessionId}}/songs/skip
+token: {{hostToken}}
+
+### ⏳ S7 Remove song from queue [Issue #33 — implementation pending]
+DELETE {{baseUrl}}/sessions/{{sessionId}}/songs/{{song1Id}}
+token: {{hostToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S8 – Current Song
+# ──────────────────────────────────────────────────────────────
+
+### ⏳ S8 Get currently playing song [stub only — no open issue yet]
+GET {{baseUrl}}/sessions/{{sessionId}}/songs/current
+token: {{hostToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S9 – Audience Reactions (WebSocket / STOMP — not a REST endpoint)
+# ──────────────────────────────────────────────────────────────
+
+### ❌ S9 Send reaction [Issue #35 — WebSocket via STOMP, no REST mapping]
+# Connect to ws://{{baseUrl}}/ws and publish to /app/sessions/{sessionId}/reactions
+POST {{baseUrl}}/sessions/{{sessionId}}/reactions
+Content-Type: application/json
+token: {{guestToken}}
+
+{
+  "type": "CLAP"
+}
+
+# ──────────────────────────────────────────────────────────────
+# S12 – Vote on Next Song
+# ──────────────────────────────────────────────────────────────
+
+### ⏳ S12 List voting rounds [stub only]
+GET {{baseUrl}}/sessions/{{sessionId}}/votingRounds
+token: {{hostToken}}
+
+### ✅ S12 Cast vote in a voting round
+# roundId is set in env file (default: 1). Adjust after listing rounds above.
+POST {{baseUrl}}/sessions/{{sessionId}}/votingRounds/{{roundId}}/votes
+Content-Type: application/json
+token: {{guestToken}}
+
+{
+  "songId": {{song2Id}}
+}
+
+# ──────────────────────────────────────────────────────────────
+# S13 – Session History
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S13 User session history
+GET {{baseUrl}}/users/{{hostUserId}}/sessions
+token: {{hostToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S14 – Voting Leaderboard
+# ──────────────────────────────────────────────────────────────
+
+### ✅ S14 Get voting round details / leaderboard
+# Returns vote counts per song candidate for a given round.
+GET {{baseUrl}}/sessions/{{sessionId}}/votingRounds/{{roundId}}
+token: {{hostToken}}
+
+# ──────────────────────────────────────────────────────────────
+# S15 – Session Review
+# ──────────────────────────────────────────────────────────────
+
+### ⏳ S15 Session review (available after session is ENDED) [Issue #52 — pending]
+GET {{baseUrl}}/sessions/{{sessionId}}/review
+token: {{hostToken}}

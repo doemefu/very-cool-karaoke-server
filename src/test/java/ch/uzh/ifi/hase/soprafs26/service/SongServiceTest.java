@@ -1,6 +1,12 @@
 package ch.uzh.ifi.hase.soprafs26.service;
 
+import ch.uzh.ifi.hase.soprafs26.entity.Session;
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
+import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
+import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -10,6 +16,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class SongServiceTest {
@@ -19,6 +26,15 @@ class SongServiceTest {
 
     @Mock
     private LyricsService lyricsService;
+
+    @Mock
+    private SongRepository songRepository;
+
+    @Mock
+    private SessionService sessionService;
+
+    @Mock
+    private SongWebSocketPublisher songWebSocketPublisher;
 
     @InjectMocks
     private SongService songService;
@@ -78,5 +94,45 @@ class SongServiceTest {
         songService.search("Unknown");
 
         assertNull(songService.getCachedLyrics("id4"));
+    }
+
+    @Test
+    void addToQueue_persistsSongAndBroadcastsQueue() {
+        Session session = new Session();
+        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA");
+        dto.setDurationMs(230000);
+
+        // Pre-populate lyrics cache
+        songService.cacheLyrics("track123", "Here I go again...");
+
+        when(sessionService.getSessionById(1L)).thenReturn(session);
+        when(songRepository.save(any(Song.class))).thenAnswer(inv -> {
+            Song s = inv.getArgument(0);
+            s.setId(10L);
+            return s;
+        });
+
+        SongGetDTO result = songService.addToQueue(1L, dto);
+
+        verify(songRepository).save(any(Song.class));
+        verify(songWebSocketPublisher).broadcastQueue(eq(1L), anyList());
+        assertEquals("Dancing Queen", result.getTitle());
+        assertEquals("ABBA", result.getArtist());
+        assertEquals("Here I go again...", result.getLyrics());
+    }
+
+    @Test
+    void addToQueue_noLyricsCache_persistsSongWithNullLyrics() {
+        Session session = new Session();
+        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown");
+        dto.setDurationMs(180000);
+
+        when(sessionService.getSessionById(2L)).thenReturn(session);
+        when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        SongGetDTO result = songService.addToQueue(2L, dto);
+
+        assertNull(result.getLyrics());
+        verify(songWebSocketPublisher).broadcastQueue(eq(2L), anyList());
     }
 }
