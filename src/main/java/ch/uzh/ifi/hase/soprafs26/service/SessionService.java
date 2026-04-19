@@ -157,6 +157,12 @@ public class SessionService {
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);
 
+        saved.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .ifPresent(s -> songWebSocketPublisher.broadcastCurrentSong(sessionId, s));
+
         log.debug("User {} joined session {}", userId, sessionId);
         return saved;
     }
