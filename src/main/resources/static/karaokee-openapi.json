@@ -17,7 +17,7 @@
   ],
   "security": [
     {
-      "BearerAuth": []
+      "token": []
     }
   ],
   "tags": [
@@ -1039,7 +1039,8 @@
         "type": "object",
         "required": [
           "title",
-          "artist"
+          "artist",
+          "durationMs"
         ],
         "properties": {
           "spotifyId": {
@@ -1053,6 +1054,14 @@
           "artist": {
             "type": "string",
             "example": "ABBA"
+          },
+          "albumArt": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer",
+            "example": 354000
           }
         }
       },
@@ -1175,10 +1184,10 @@
       }
     },
     "securitySchemes": {
-      "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "UUID"
+      "token": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "token"
       }
     }
   }

@@ -39,11 +39,11 @@ public class SongsController implements SongsApi {
     }
 
     // POST /sessions/{sessionId}/songs — Add a song to the queue (S6, S10)
-    // Returns 201 + SongGetDTO, 404 if session not found, 422 if lyrics unavailable
+    // Returns 201 + SongGetDTO, 404 if session not found
     @Override
     public ResponseEntity<SongGetDTO> sessionsSessionIdSongsPost(Long sessionId, SongPostDTO songPostDTO) {
-        // TODO: delegate to songService.addToQueue(sessionId, songPostDTO)
-        throw new UnsupportedOperationException("Not implemented yet");
+        SongGetDTO result = songService.addToQueue(sessionId, songPostDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     // GET /sessions/{sessionId}/songs/current — Get the currently playing song with lyrics (S8)

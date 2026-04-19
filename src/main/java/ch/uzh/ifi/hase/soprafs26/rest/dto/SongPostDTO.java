@@ -20,6 +20,10 @@ public class SongPostDTO {
 
     private String artist;
 
+    private String albumArt = null;
+
+    private Integer durationMs;
+
     public SongPostDTO() {
         super();
     }
@@ -93,6 +97,27 @@ public class SongPostDTO {
 
     public void setArtist(String artist) {
         this.artist = artist;
+    }
+
+    @Schema(name = "albumArt", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("albumArt")
+    public String getAlbumArt() {
+        return albumArt;
+    }
+
+    public void setAlbumArt(String albumArt) {
+        this.albumArt = albumArt;
+    }
+
+    @NotNull
+    @Schema(name = "durationMs", requiredMode = Schema.RequiredMode.REQUIRED)
+    @JsonProperty("durationMs")
+    public Integer getDurationMs() {
+        return durationMs;
+    }
+
+    public void setDurationMs(Integer durationMs) {
+        this.durationMs = durationMs;
     }
 
     @Override
