@@ -3,23 +3,31 @@ package ch.uzh.ifi.hase.soprafs26.controller;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
+import ch.uzh.ifi.hase.soprafs26.service.SongService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
 @RestController
 public class SongsController implements SongsApi {
 
-    // TODO: inject SongService here
-    // SongsController(SongService songService) { this.songService = songService; }
+    private final SongService songService;
 
-    // GET /songs/search?query= — Search songs via Genius API (S11)
-    // Returns 200 + list of SongSearchResultDTO, 400 if query is missing
+    SongsController(SongService songService) {
+        this.songService = songService;
+    }
+
+    // GET /songs/search?query= — Search songs via Spotify Web API (S11)
+    // Returns 200 + list of SongSearchResultDTO, 400 if query is blank
     @Override
     public ResponseEntity<List<SongSearchResultDTO>> songsSearchGet(String query) {
-        // TODO: delegate to songService.search(query)
-        throw new UnsupportedOperationException("Not implemented yet");
+        if (query.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Query must not be blank");
+        }
+        return ResponseEntity.ok(songService.search(query));
     }
 
     // GET /sessions/{sessionId}/songs — Get the ordered song queue

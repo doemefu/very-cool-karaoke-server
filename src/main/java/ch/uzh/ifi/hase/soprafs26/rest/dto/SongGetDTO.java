@@ -18,11 +18,13 @@ public class SongGetDTO {
 
     private String spotifyId = null;
 
-    private String geniusId = null;
-
     private String title;
 
     private String artist;
+
+    private String albumArt = null;
+
+    private Integer durationMs;
 
     private String lyrics = null;
 
@@ -74,27 +76,6 @@ public class SongGetDTO {
         this.spotifyId = spotifyId;
     }
 
-    public SongGetDTO geniusId(String geniusId) {
-        this.geniusId = geniusId;
-        return this;
-    }
-
-    /**
-     * Get geniusId
-     *
-     * @return geniusId
-     */
-
-    @Schema(name = "geniusId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @JsonProperty("geniusId")
-    public String getGeniusId() {
-        return geniusId;
-    }
-
-    public void setGeniusId(String geniusId) {
-        this.geniusId = geniusId;
-    }
-
     public SongGetDTO title(String title) {
         this.title = title;
         return this;
@@ -135,6 +116,36 @@ public class SongGetDTO {
 
     public void setArtist(String artist) {
         this.artist = artist;
+    }
+
+    public SongGetDTO albumArt(String albumArt) {
+        this.albumArt = albumArt;
+        return this;
+    }
+
+    @Schema(name = "albumArt", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("albumArt")
+    public String getAlbumArt() {
+        return albumArt;
+    }
+
+    public void setAlbumArt(String albumArt) {
+        this.albumArt = albumArt;
+    }
+
+    public SongGetDTO durationMs(Integer durationMs) {
+        this.durationMs = durationMs;
+        return this;
+    }
+
+    @Schema(name = "durationMs", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("durationMs")
+    public Integer getDurationMs() {
+        return durationMs;
+    }
+
+    public void setDurationMs(Integer durationMs) {
+        this.durationMs = durationMs;
     }
 
     public SongGetDTO lyrics(String lyrics) {
@@ -232,9 +243,10 @@ public class SongGetDTO {
         SongGetDTO songGetDTO = (SongGetDTO) o;
         return Objects.equals(this.id, songGetDTO.id) &&
                 Objects.equals(this.spotifyId, songGetDTO.spotifyId) &&
-                Objects.equals(this.geniusId, songGetDTO.geniusId) &&
                 Objects.equals(this.title, songGetDTO.title) &&
                 Objects.equals(this.artist, songGetDTO.artist) &&
+                Objects.equals(this.albumArt, songGetDTO.albumArt) &&
+                Objects.equals(this.durationMs, songGetDTO.durationMs) &&
                 Objects.equals(this.lyrics, songGetDTO.lyrics) &&
                 Objects.equals(this.currentVoteCount, songGetDTO.currentVoteCount) &&
                 Objects.equals(this.performed, songGetDTO.performed) &&
@@ -243,7 +255,7 @@ public class SongGetDTO {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, spotifyId, geniusId, title, artist, lyrics, currentVoteCount, performed, addedBy);
+        return Objects.hash(id, spotifyId, title, artist, albumArt, durationMs, lyrics, currentVoteCount, performed, addedBy);
     }
 
     @Override
@@ -251,9 +263,10 @@ public class SongGetDTO {
         String sb = "class SongGetDTO {\n" +
                 "    id: " + toIndentedString(id) + "\n" +
                 "    spotifyId: " + toIndentedString(spotifyId) + "\n" +
-                "    geniusId: " + toIndentedString(geniusId) + "\n" +
                 "    title: " + toIndentedString(title) + "\n" +
                 "    artist: " + toIndentedString(artist) + "\n" +
+                "    albumArt: " + toIndentedString(albumArt) + "\n" +
+                "    durationMs: " + toIndentedString(durationMs) + "\n" +
                 "    lyrics: " + toIndentedString(lyrics) + "\n" +
                 "    currentVoteCount: " + toIndentedString(currentVoteCount) + "\n" +
                 "    performed: " + toIndentedString(performed) + "\n" +

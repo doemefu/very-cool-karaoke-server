@@ -59,6 +59,12 @@ public class SessionsController implements SessionsApi {
         return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(session));
     }
 
+    @Override
+    public ResponseEntity<SessionGetDTO> sessionsPinGamePinGet(String gamePin) {
+        Session session = sessionService.getSessionByPin(gamePin);
+        return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(session));
+    }
+
 
     @Override
     public ResponseEntity<SessionGetDTO> sessionsSessionIdPut(Long sessionId,
@@ -100,7 +106,13 @@ public class SessionsController implements SessionsApi {
             requester.getId()
         );
 
-        return ResponseEntity.ok(DTOMapper.INSTANCE.convertEntityToSessionGetDTO(updated));
+        SessionGetDTO dto = DTOMapper.INSTANCE.convertEntityToSessionGetDTO(updated);
+
+        dto.setRequiresSongSelection(
+            sessionService.requiresSongSelection(sessionId, requester.getId())
+        );
+
+        return ResponseEntity.ok(dto);
     }
 
 
@@ -123,7 +135,7 @@ public class SessionsController implements SessionsApi {
     }
 
     /**
-     * PUT /sessions/{sessionId}/participants/{userId}
+     * DELETE /sessions/{sessionId}/participants/{userId}
      *
      * Removes the user from the active participant list (soft-leave).
      * The session itself is unaffected — all data is preserved.
@@ -133,8 +145,8 @@ public class SessionsController implements SessionsApi {
      * @return 204 No Content
      */
     @Override
-    public ResponseEntity<Void> sessionsSessionIdParticipantsUserIdPut(Long sessionId,
-                                                                        Long userId) {
+    public ResponseEntity<Void> sessionsSessionIdParticipantsUserIdDelete(Long sessionId,
+                                                                           Long userId) {
         sessionService.leaveSession(sessionId, userId);
         return ResponseEntity.noContent().build();
     }
