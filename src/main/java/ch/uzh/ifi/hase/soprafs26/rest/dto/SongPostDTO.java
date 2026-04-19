@@ -133,12 +133,14 @@ public class SongPostDTO {
         SongPostDTO songPostDTO = (SongPostDTO) o;
         return Objects.equals(this.spotifyId, songPostDTO.spotifyId) &&
                 Objects.equals(this.title, songPostDTO.title) &&
-                Objects.equals(this.artist, songPostDTO.artist);
+                Objects.equals(this.artist, songPostDTO.artist) &&
+                Objects.equals(this.albumArt, songPostDTO.albumArt) &&
+                Objects.equals(this.durationMs, songPostDTO.durationMs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(spotifyId, title, artist);
+        return Objects.hash(spotifyId, title, artist, albumArt, durationMs);
     }
 
     @Override
@@ -147,6 +149,8 @@ public class SongPostDTO {
                 "    spotifyId: " + toIndentedString(spotifyId) + "\n" +
                 "    title: " + toIndentedString(title) + "\n" +
                 "    artist: " + toIndentedString(artist) + "\n" +
+                "    albumArt: " + toIndentedString(albumArt) + "\n" +
+                "    durationMs: " + toIndentedString(durationMs) + "\n" +
                 "}";
         return sb;
     }
@@ -162,4 +166,3 @@ public class SongPostDTO {
         return o.toString().replace("\n", "\n    ");
     }
 }
-

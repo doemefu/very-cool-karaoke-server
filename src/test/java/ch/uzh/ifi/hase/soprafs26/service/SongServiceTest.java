@@ -103,7 +103,7 @@ class SongServiceTest {
         dto.setDurationMs(230000);
 
         // Pre-populate lyrics cache
-        songService.getLyricsCache().put("track123", java.util.Optional.of("Here I go again..."));
+        songService.cacheLyrics("track123", "Here I go again...");
 
         when(sessionService.getSessionById(1L)).thenReturn(session);
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> {

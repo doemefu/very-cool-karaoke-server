@@ -8,10 +8,10 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -84,11 +84,11 @@ public class SongService {
         song.setDurationMs(dto.getDurationMs());
         song.setLyrics(getCachedLyrics(dto.getSpotifyId())); // nullable
         song.setSession(session);
-        songRepository.save(song);
+        song = songRepository.save(song);
 
         session.addSong(song); // update in-memory list for broadcast
 
-        Map<Long, Long> emptyVotes = new HashMap<>();
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
 
         // Broadcast updated queue (no votes yet → empty counts map)
         List<SongGetDTO> queue = session.getPlaylist().stream()
@@ -108,6 +108,10 @@ public class SongService {
     }
 
     Map<String, Optional<String>> getLyricsCache() {
-        return lyricsCache;
+        return Map.copyOf(lyricsCache);
+    }
+
+    void cacheLyrics(String spotifyId, String lyrics) {
+        lyricsCache.put(spotifyId, Optional.ofNullable(lyrics));
     }
 }
