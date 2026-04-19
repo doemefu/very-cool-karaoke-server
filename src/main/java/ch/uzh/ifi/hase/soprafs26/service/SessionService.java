@@ -16,6 +16,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Set;
 import java.util.UUID;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+
 @Service
 @Transactional
 public class SessionService {
@@ -187,6 +191,22 @@ public class SessionService {
                 HttpStatus.NOT_FOUND, "Session not found"));
         return session.getParticipants();
     }
+
+
+    @Transactional(readOnly = true)
+    public List<Session> getSessionsByUser(Long userId) {
+        userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "User not found"));
+
+        List<Session> created = sessionRepository.findByAdminId(userId);
+        List<Session> joined = sessionRepository.findByParticipantId(userId);
+        Set<Session> all = new LinkedHashSet<>(created);
+        all.addAll(joined);
+
+        return new ArrayList<>(all);
+    }
+
 
     @Transactional(readOnly = true)
     public boolean requiresSongSelection(Long sessionId, Long userId) {

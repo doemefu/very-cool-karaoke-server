@@ -8,17 +8,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import ch.uzh.ifi.hase.soprafs26.entity.Session;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
+import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs26.service.SessionService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class UsersController implements UsersApi {
 
     private final UserService userService;
     private final HttpServletRequest request;
+    private final SessionService sessionService;
 
     @Autowired
-    public UsersController(UserService userService, HttpServletRequest request) {
+    public UsersController(UserService userService, SessionService sessionService, HttpServletRequest request) {
         this.userService = userService;
+        this.sessionService = sessionService;
         this.request = request;
     }
 
@@ -40,7 +51,19 @@ public class UsersController implements UsersApi {
     // Returns 200 + list of SessionGetDTO, 404 if user not found
     @Override
     public ResponseEntity<List<SessionGetDTO>> usersUserIdSessionsGet(Long userId) {
-        // TODO: delegate to sessionService.getSessionsByUser(userId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        String token = request.getHeader("token");
+        User requester = userService.getUserByToken(token);
+
+        if (!requester.getId().equals(userId)) {
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN, "Can only view your own session history");
+        }
+        
+        List<SessionGetDTO> dtos = sessionService.getSessionsByUser(userId)
+            .stream()
+            .map(DTOMapper.INSTANCE::convertEntityToSessionGetDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 }
