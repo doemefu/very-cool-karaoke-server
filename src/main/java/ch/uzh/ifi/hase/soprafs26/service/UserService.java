@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +55,9 @@ public class UserService {
     public User loginUser(User userInput) {
         User user = userRepository.findByUsername(userInput.getUsername());
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            // throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid
+            // credentials");
         }
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         if (!encoder.matches(userInput.getPassword(), user.getPassword())) {
@@ -93,17 +94,15 @@ public class UserService {
         userRepository.save(user);
     }
 
-
     private void checkIfUserExists(User userToBeCreated) {
         User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
 
         String baseErrorMessage = "The %s provided %s not unique. Therefore, the user could not be created!";
-         if (userByUsername != null) {
+        if (userByUsername != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, String.format(baseErrorMessage, "username", "is"));
         }
 
     }
-
 
     /**
      * Looks up the User who owns the given bearer token.
