@@ -1,8 +1,10 @@
 package ch.uzh.ifi.hase.soprafs26.controller;
 
 import ch.uzh.ifi.hase.soprafs26.entity.User;
+import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotePostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.service.UserService;
 import ch.uzh.ifi.hase.soprafs26.service.VotingService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class VotingController implements VotingApi {
@@ -39,8 +42,9 @@ public class VotingController implements VotingApi {
     // Returns 200 + VotingRoundGetDTO, 404 if not found
     @Override
     public ResponseEntity<VotingRoundGetDTO> sessionsSessionIdVotingRoundsRoundIdGet(Long sessionId, Long roundId) {
-        // TODO: delegate to votingService.getRound(sessionId, roundId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        VotingRound round = votingService.getVotingRound(sessionId, roundId);
+        Map<Long, Long> counts = votingService.getVoteCounts(round);
+        return ResponseEntity.ok(DTOMapper.INSTANCE.toVotingRoundGetDTO(round, counts));
     }
 
     // POST /sessions/{sessionId}/votingRounds/{roundId}/votes — Cast a vote (S12)

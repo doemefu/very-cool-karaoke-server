@@ -3,10 +3,14 @@ package ch.uzh.ifi.hase.soprafs26.service;
 import ch.uzh.ifi.hase.soprafs26.constant.VotingStatus;
 import ch.uzh.ifi.hase.soprafs26.entity.*;
 import ch.uzh.ifi.hase.soprafs26.repository.*;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -59,4 +63,21 @@ public class VotingService {
         vote.setVotedSong(song);
         voteRepository.save(vote);
     }
+
+    public VotingRound getVotingRound(Long sessionId, Long roundId) {
+        VotingRound round = votingRoundRepository.findById(roundId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Voting round not found"));
+
+        if (!round.getSession().getId().equals(sessionId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Voting round not in this session");
+        }
+        return round;
+    }
+
+    public Map<Long, Long> getVoteCounts(VotingRound round) {
+        return voteRepository.countVotesPerSong(round).stream().collect(Collectors.toMap(
+                        VoteRepository.SongVoteCount::getSongId, VoteRepository.SongVoteCount::getCount));
+    }
+
+
 }

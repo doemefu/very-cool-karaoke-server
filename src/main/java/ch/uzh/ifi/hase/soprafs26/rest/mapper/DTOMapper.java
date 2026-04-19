@@ -1,18 +1,23 @@
 package ch.uzh.ifi.hase.soprafs26.rest.mapper;
 
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.UserGetDTO;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.UserPostDTO;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.UserTokenDTO;
+import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.*;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import ch.uzh.ifi.hase.soprafs26.entity.Session;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * DTOMapper
@@ -53,9 +58,24 @@ public interface DTOMapper {
         }
         return localDateTime.atOffset(ZoneOffset.UTC);
     }
+
     @Mapping(source = "id", target = "id")
     @Mapping(source = "username", target = "username")
     @Mapping(source = "createdAt", target = "createdAt")
     @Mapping(source = "token", target = "token")
     UserTokenDTO convertEntityToUserTokenDTO(User user);
+
+    @Mapping(target = "candidates", source = "candidates", qualifiedByName = "sortedByVotes")
+    VotingRoundGetDTO toVotingRoundGetDTO(VotingRound round, @Context Map<Long, Long> counts);
+
+    @Mapping(target = "currentVoteCount", expression = "java(counts.getOrDefault(song.getId(), 0L).intValue())")
+    SongGetDTO toSongGetDTO(Song song, @Context Map<Long, Long> counts);
+
+    @Named("sortedByVotes")
+    default List<SongGetDTO> sortedByVotes(List<Song> songs, @Context Map<Long, Long> counts) {
+        return songs.stream()
+                .map(s -> toSongGetDTO(s, counts))
+                .sorted(Comparator.comparingInt(SongGetDTO::getCurrentVoteCount).reversed())
+                .toList();
+    }
 }

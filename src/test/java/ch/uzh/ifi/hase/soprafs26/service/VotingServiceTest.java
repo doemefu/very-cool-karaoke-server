@@ -15,6 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -217,5 +219,67 @@ class VotingServiceTest {
 
         assertEquals(409, ex.getStatusCode().value());
         verify(voteRepository, never()).save(any());
+    }
+
+
+    @Test
+    void getVotingRound_validInput_returnsRound() {
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+
+        VotingRound result = votingService.getVotingRound(10L, 50L);
+
+        assertNotNull(result);
+        assertEquals(50L, result.getId());
+        assertEquals(10L, result.getSession().getId());
+    }
+
+    @Test
+    void getVotingRound_roundNotFound_throwsNotFound() {
+        when(votingRoundRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> votingService.getVotingRound(10L, 99L));
+
+        assertEquals(404, ex.getStatusCode().value());
+        assertTrue(ex.getReason().contains("not found"));
+    }
+
+    @Test
+    void getVotingRound_wrongSession_throwsNotFound() {
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> votingService.getVotingRound(99L, 50L));
+
+        assertEquals(404, ex.getStatusCode().value());
+        assertTrue(ex.getReason().contains("not in this session"));
+    }
+
+    @Test
+    void getVoteCounts_returnsCorrectMap() {
+        VoteRepository.SongVoteCount count1 = mock(VoteRepository.SongVoteCount.class);
+        when(count1.getSongId()).thenReturn(100L);
+        when(count1.getCount()).thenReturn(5L);
+        VoteRepository.SongVoteCount count2 = mock(VoteRepository.SongVoteCount.class);
+        when(count2.getSongId()).thenReturn(200L);
+        when(count2.getCount()).thenReturn(2L);
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(count1, count2));
+
+        Map<Long, Long> result = votingService.getVoteCounts(votingRound);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(5L, result.get(100L));
+        assertEquals(2L, result.get(200L));
+    }
+
+    @Test
+    void getVoteCounts_noVotes_returnsEmptyMap() {
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
+
+        Map<Long, Long> result = votingService.getVoteCounts(votingRound);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 }
