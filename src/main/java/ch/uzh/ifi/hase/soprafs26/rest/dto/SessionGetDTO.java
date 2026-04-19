@@ -37,6 +37,8 @@ public class SessionGetDTO {
     @Valid
     private List<@Valid UserGetDTO> participants = new ArrayList<>();
 
+    private Boolean requiresSongSelection;
+
     public SessionGetDTO id(Long id) {
         this.id = id;
         return this;
@@ -213,6 +215,30 @@ public class SessionGetDTO {
         this.participants = participants;
     }
 
+    public SessionGetDTO requiresSongSelection(Boolean requiresSongSelection) {
+        this.requiresSongSelection = requiresSongSelection;
+        return this;
+    }
+
+    /**
+     * True only in the join endpoint response — indicates the caller still
+     * needs to add their initial song before interacting with the session.
+     *
+     * @return requiresSongSelection
+     */
+    @Schema(name = "requiresSongSelection",
+            description = "True if the caller still needs to add their initial song",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("requiresSongSelection")
+    public Boolean getRequiresSongSelection() {
+        return requiresSongSelection;
+    }
+
+    public void setRequiresSongSelection(Boolean requiresSongSelection) {
+        this.requiresSongSelection = requiresSongSelection;
+    }
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -229,12 +255,13 @@ public class SessionGetDTO {
                 Objects.equals(this.status, sessionGetDTO.status) &&
                 Objects.equals(this.createdAt, sessionGetDTO.createdAt) &&
                 Objects.equals(this.admin, sessionGetDTO.admin) &&
-                Objects.equals(this.participants, sessionGetDTO.participants);
+                Objects.equals(this.participants, sessionGetDTO.participants) &&
+                Objects.equals(this.requiresSongSelection, sessionGetDTO.requiresSongSelection);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, gamePin, status, createdAt, admin, participants);
+        return Objects.hash(id, name, description, gamePin, status, createdAt, admin, participants, requiresSongSelection);
     }
 
     @Override
@@ -248,6 +275,7 @@ public class SessionGetDTO {
                 "    createdAt: " + toIndentedString(createdAt) + "\n" +
                 "    admin: " + toIndentedString(admin) + "\n" +
                 "    participants: " + toIndentedString(participants) + "\n" +
+                "    requiresSongSelection: " + toIndentedString(requiresSongSelection) + "\n" +
                 "}";
         return sb;
     }
