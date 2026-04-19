@@ -123,7 +123,7 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Logout (invalidates token, sets status OFFLINE)",
+        "summary": "Logout (invalidates token)",
         "responses": {
           "204": {
             "description": "Logged out successfully"
@@ -789,6 +789,12 @@
           },
           "410": {
             "description": "Voting round is CLOSED"
+          },
+          "403": {
+            "description": "User is not a session participant"
+          },
+          "404": {
+            "description": "Voting round or song not found"
           }
         }
       }
