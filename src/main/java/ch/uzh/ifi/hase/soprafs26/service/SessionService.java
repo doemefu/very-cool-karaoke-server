@@ -160,8 +160,11 @@ public class SessionService {
         saved.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .findFirst()
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
-                .ifPresent(s -> songWebSocketPublisher.broadcastCurrentSong(sessionId, s));
+                .ifPresent(s -> {
+                    songWebSocketPublisher.broadcastCurrentSong(sessionId,
+                        DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes));
+                    songWebSocketPublisher.broadcastLyrics(sessionId, s.getLyrics());
+                });
 
         log.debug("User {} joined session {}", userId, sessionId);
         return saved;
