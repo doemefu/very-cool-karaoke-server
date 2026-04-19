@@ -5,6 +5,9 @@ import ch.uzh.ifi.hase.soprafs26.entity.Session;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +16,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 
 @Service
 @Transactional
@@ -28,12 +33,15 @@ public class SessionService {
 
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final SongWebSocketPublisher songWebSocketPublisher;
 
     @Autowired
     public SessionService(SessionRepository sessionRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          SongWebSocketPublisher songWebSocketPublisher) {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
+        this.songWebSocketPublisher = songWebSocketPublisher;
     }
 
     /*
@@ -142,6 +150,13 @@ public class SessionService {
         }
 
         Session saved = sessionRepository.save(session);
+
+        Map<Long, Long> emptyVotes = new HashMap<>();
+        List<SongGetDTO> queue = saved.getPlaylist().stream()
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
+        songWebSocketPublisher.broadcastQueue(sessionId, queue);
+
         log.debug("User {} joined session {}", userId, sessionId);
         return saved;
     }
