@@ -22,7 +22,7 @@ public class LyricsService {
     /**
      * Fetches lyrics for the given artist and title.
      *
-     * @return lyrics text, or null if not found or if the request times out (2 s)
+     * @return lyrics text, or null if not found or if the request times out (500 ms connect / 1000 ms read)
      */
     public String fetchLyrics(String artist, String title) {
         try {

@@ -1038,14 +1038,14 @@
       "SongPostDTO": {
         "type": "object",
         "required": [
+          "spotifyId",
           "title",
           "artist",
           "durationMs"
         ],
         "properties": {
           "spotifyId": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "title": {
             "type": "string",

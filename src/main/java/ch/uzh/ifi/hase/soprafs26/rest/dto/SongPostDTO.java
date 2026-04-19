@@ -31,7 +31,8 @@ public class SongPostDTO {
     /**
      * Constructor with only required parameters
      */
-    public SongPostDTO(String title, String artist) {
+    public SongPostDTO(String spotifyId, String title, String artist) {
+        this.spotifyId = spotifyId;
         this.title = title;
         this.artist = artist;
     }
@@ -47,7 +48,8 @@ public class SongPostDTO {
      * @return spotifyId
      */
 
-    @Schema(name = "spotifyId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @NotNull
+    @Schema(name = "spotifyId", requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonProperty("spotifyId")
     public String getSpotifyId() {
         return spotifyId;

@@ -88,13 +88,15 @@ public class SongService {
 
         session.addSong(song); // update in-memory list for broadcast
 
+        Map<Long, Long> emptyVotes = new HashMap<>();
+
         // Broadcast updated queue (no votes yet → empty counts map)
         List<SongGetDTO> queue = session.getPlaylist().stream()
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, new HashMap<>()))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);
 
-        return DTOMapper.INSTANCE.toSongGetDTO(song, new HashMap<>());
+        return DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes);
     }
 
     /**

@@ -13,7 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -100,8 +99,8 @@ class SongServiceTest {
     @Test
     void addToQueue_persistsSongAndBroadcastsQueue() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("Dancing Queen", "ABBA");
-        dto.setSpotifyId("track123");
+        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA");
+        dto.setDurationMs(230000);
 
         // Pre-populate lyrics cache
         songService.getLyricsCache().put("track123", java.util.Optional.of("Here I go again..."));
@@ -125,8 +124,8 @@ class SongServiceTest {
     @Test
     void addToQueue_noLyricsCache_persistsSongWithNullLyrics() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("Unknown Song", "Unknown");
-        dto.setSpotifyId("uncached");
+        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown");
+        dto.setDurationMs(180000);
 
         when(sessionService.getSessionById(2L)).thenReturn(session);
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
