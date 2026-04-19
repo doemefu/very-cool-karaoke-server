@@ -62,6 +62,14 @@ public class SessionService {
                 HttpStatus.NOT_FOUND, "Session not found"));
     }
 
+    public Session getSessionByPin(String gamePin) {
+        Session session = sessionRepository.findByGamePin(gamePin);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found");
+        }
+        return session;
+    }
+
 
     public Session updateSessionStatus(Long sessionId, SessionStatus newStatus, Long requesterId) {
         Session session = getSessionById(sessionId);
@@ -120,8 +128,14 @@ public class SessionService {
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "User not found"));
 
+        boolean isNewParticipant = !session.getParticipants().contains(user);
+
         // Set.add() is a no-op when user is already present → idempotent
         session.addParticipant(user);
+
+        if (isNewParticipant) {
+        session.addToPendingInitialSong(user);
+        }
 
         Session saved = sessionRepository.save(session);
         log.debug("User {} joined session {}", userId, sessionId);
@@ -172,5 +186,25 @@ public class SessionService {
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Session not found"));
         return session.getParticipants();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean requiresSongSelection(Long sessionId, Long userId) {
+        Session session = getSessionById(sessionId);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "User not found"));
+        return session.isPendingInitialSong(user);
+    }
+
+    public void markInitialSongAdded(Long sessionId, Long userId) {
+        Session session = getSessionById(sessionId);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "User not found"));
+        session.removeFromPendingInitialSong(user);
+        sessionRepository.save(session);
+        log.debug("User {} fulfilled initial song requirement for session {}",
+            userId, sessionId);
     }
 }

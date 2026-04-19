@@ -123,7 +123,7 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Logout (invalidates token, sets status OFFLINE)",
+        "summary": "Logout (invalidates token)",
         "responses": {
           "204": {
             "description": "Logged out successfully"
@@ -231,6 +231,39 @@
           },
           "401": {
             "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/sessions/pin/{gamePin}": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Look up a session by its game pin",
+        "parameters": [
+          {
+            "name": "gamePin",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionGetDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No session with that pin"
           }
         }
       }
@@ -374,7 +407,7 @@
       }
     },
     "/sessions/{sessionId}/participants/{userId}": {
-      "put": {
+      "delete": {
         "tags": [
           "Sessions"
         ],
@@ -437,7 +470,7 @@
         "tags": [
           "Songs"
         ],
-        "summary": "Search songs by title or artist via Genius API (S11)",
+        "summary": "Search songs by title or artist via Spotify Web API (S11)",
         "parameters": [
           {
             "name": "query",
@@ -756,6 +789,12 @@
           },
           "410": {
             "description": "Voting round is CLOSED"
+          },
+          "403": {
+            "description": "User is not a session participant"
+          },
+          "404": {
+            "description": "Voting round or song not found"
           }
         }
       }
@@ -977,6 +1016,10 @@
             "items": {
               "$ref": "#/components/schemas/UserGetDTO"
             }
+          },
+          "requiresSongSelection": {
+            "type": "boolean",
+            "description": "True only in the join endpoint response — indicates the caller still needs to add their initial song before interacting with the session. Null in all other context."
           }
         }
       },
@@ -1003,10 +1046,6 @@
             "type": "string",
             "nullable": true
           },
-          "geniusId": {
-            "type": "string",
-            "nullable": true
-          },
           "title": {
             "type": "string",
             "example": "Dancing Queen"
@@ -1028,10 +1067,6 @@
             "type": "string",
             "nullable": true
           },
-          "geniusId": {
-            "type": "string",
-            "nullable": true
-          },
           "title": {
             "type": "string"
           },
@@ -1050,6 +1085,13 @@
           },
           "addedBy": {
             "$ref": "#/components/schemas/UserGetDTO"
+          },
+          "albumArt": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer"
           }
         }
       },
@@ -1057,10 +1099,6 @@
         "type": "object",
         "properties": {
           "spotifyId": {
-            "type": "string",
-            "nullable": true
-          },
-          "geniusId": {
             "type": "string",
             "nullable": true
           },
@@ -1072,6 +1110,13 @@
           },
           "lyricsAvailable": {
             "type": "boolean"
+          },
+          "albumArt": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer"
           }
         }
       },

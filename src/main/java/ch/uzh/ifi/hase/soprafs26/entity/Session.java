@@ -61,6 +61,14 @@ public class Session {
 
     private Set<User> participants = new HashSet<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "session_pending_initial_song",
+        joinColumns = @JoinColumn(name = "session_id"),
+        inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<User> pendingInitialSong = new HashSet<>();
+
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
@@ -105,5 +113,16 @@ public class Session {
         song.setSession(null);    
     }
 
+    public void addToPendingInitialSong(User user) {
+        this.pendingInitialSong.add(user);
+    }
+
+    public void removeFromPendingInitialSong(User user) {
+        this.pendingInitialSong.remove(user);
+    }
+
+    public boolean isPendingInitialSong(User user) {
+        return this.pendingInitialSong.contains(user);
+    }
 
 }
