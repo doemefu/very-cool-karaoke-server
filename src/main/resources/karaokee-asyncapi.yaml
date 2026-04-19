@@ -242,13 +242,15 @@ components:
         spotifyId:
           type: string
           nullable: true
-        geniusId:
-          type: string
-          nullable: true
         title:
           type: string
         artist:
           type: string
+        albumArt:
+          type: string
+          nullable: true
+        durationMs:
+          type: integer
         lyrics:
           type: string
           nullable: true

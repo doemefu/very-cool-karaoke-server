@@ -470,7 +470,7 @@
         "tags": [
           "Songs"
         ],
-        "summary": "Search songs by title or artist via Genius API (S11)",
+        "summary": "Search songs by title or artist via Spotify Web API (S11)",
         "parameters": [
           {
             "name": "query",
@@ -1036,10 +1036,6 @@
             "type": "string",
             "nullable": true
           },
-          "geniusId": {
-            "type": "string",
-            "nullable": true
-          },
           "title": {
             "type": "string",
             "example": "Dancing Queen"
@@ -1061,10 +1057,6 @@
             "type": "string",
             "nullable": true
           },
-          "geniusId": {
-            "type": "string",
-            "nullable": true
-          },
           "title": {
             "type": "string"
           },
@@ -1083,6 +1075,13 @@
           },
           "addedBy": {
             "$ref": "#/components/schemas/UserGetDTO"
+          },
+          "albumArt": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer"
           }
         }
       },
@@ -1090,10 +1089,6 @@
         "type": "object",
         "properties": {
           "spotifyId": {
-            "type": "string",
-            "nullable": true
-          },
-          "geniusId": {
             "type": "string",
             "nullable": true
           },
@@ -1105,6 +1100,13 @@
           },
           "lyricsAvailable": {
             "type": "boolean"
+          },
+          "albumArt": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer"
           }
         }
       },
