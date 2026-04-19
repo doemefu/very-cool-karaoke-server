@@ -10,7 +10,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +24,10 @@ public class SpotifyService {
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     private static final String SEARCH_URL = "https://api.spotify.com/v1/search?q={q}&type=track&limit=5";
 
-    @Value("${spotify.client-id:}")
+    @Value("${SPOTIFY_CLIENT_ID:}")
     private String clientId = "";
 
-    @Value("${spotify.client-secret:}")
+    @Value("${SPOTIFY_CLIENT_SECRET:}")
     private String clientSecret = "";
 
     private final RestTemplate restTemplate;
@@ -37,6 +39,10 @@ public class SpotifyService {
 
     @PostConstruct
     public void fetchToken() {
+        // @Value may not resolve in all run environments; fall back to System.getenv()
+        if (clientId.isBlank()) clientId = System.getenv().getOrDefault("SPOTIFY_CLIENT_ID", "");
+        if (clientSecret.isBlank()) clientSecret = System.getenv().getOrDefault("SPOTIFY_CLIENT_SECRET", "");
+
         if (clientId.isBlank() || clientSecret.isBlank()) {
             log.warn("Spotify credentials not configured — skipping token fetch");
             return;
@@ -61,6 +67,23 @@ public class SpotifyService {
     }
 
     public List<SpotifyTrack> search(String query) {
+        try {
+            return doSearch(query);
+        }
+        catch (HttpClientErrorException.Unauthorized e) {
+            log.warn("Spotify token rejected (401) — refreshing and retrying once");
+            fetchToken();
+            try {
+                return doSearch(query);
+            }
+            catch (HttpClientErrorException.Unauthorized retryEx) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                        "Spotify authentication failed after token refresh");
+            }
+        }
+    }
+
+    private List<SpotifyTrack> doSearch(String query) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
