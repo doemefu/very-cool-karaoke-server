@@ -1,8 +1,8 @@
 package ch.uzh.ifi.hase.soprafs26.service;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -26,7 +26,7 @@ public class LyricsService {
      * Fetches lyrics for the given artist and title.
      *
      * @return lyrics text, or null if not found or if the request cannot be completed due to
-     *         connection/read failures (including configured timeouts of 500 ms connect / 1000 ms read)
+     * connection/read failures (including configured timeouts of 500 ms connect / 1000 ms read)
      */
     public String fetchLyrics(String artist, String title) {
         try {

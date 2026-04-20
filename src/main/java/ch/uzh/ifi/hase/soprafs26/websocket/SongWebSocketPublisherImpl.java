@@ -27,8 +27,8 @@ public class SongWebSocketPublisherImpl implements SongWebSocketPublisher {
     @Override
     public void broadcastLyrics(Long sessionId, String lyrics) {
         messagingTemplate.convertAndSend(
-            "/topic/sessions/" + sessionId + "/lyrics",
-            new LyricsPayload(lyrics)
+                "/topic/sessions/" + sessionId + "/lyrics",
+                new LyricsPayload(lyrics)
         );
     }
 }

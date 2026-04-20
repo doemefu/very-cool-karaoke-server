@@ -1,403 +1,403 @@
 {
-  "openapi": "3.0.3",
-  "info": {
-    "title": "Karaokee API",
-    "description": "REST API for the Karaokee Session Tool \u2013 FS26 Group 22",
-    "version": "1.0.0"
+  "openapi" : "3.0.3",
+  "info" : {
+    "title" : "Karaokee API",
+    "description" : "REST API for the Karaokee Session Tool \u2013 FS26 Group 22",
+    "version" : "1.0.0"
   },
-  "servers": [
+  "servers" : [
     {
-      "url": "https://sopra-fs26-group-22-server.oa.r.appspot.com",
-      "description": "Production (Google Cloud)"
+      "url" : "https://sopra-fs26-group-22-server.oa.r.appspot.com",
+      "description" : "Production (Google Cloud)"
     },
     {
-      "url": "http://localhost:8080",
-      "description": "Local development"
+      "url" : "http://localhost:8080",
+      "description" : "Local development"
     }
   ],
-  "security": [
+  "security" : [
     {
-      "token": []
+      "token" : []
     }
   ],
-  "tags": [
+  "tags" : [
     {
-      "name": "Auth",
-      "description": "Registration and login"
+      "name" : "Auth",
+      "description" : "Registration and login"
     },
     {
-      "name": "Users",
-      "description": "User management"
+      "name" : "Users",
+      "description" : "User management"
     },
     {
-      "name": "Sessions",
-      "description": "Karaoke session lifecycle"
+      "name" : "Sessions",
+      "description" : "Karaoke session lifecycle"
     },
     {
-      "name": "Songs",
-      "description": "Song search and queue management"
+      "name" : "Songs",
+      "description" : "Song search and queue management"
     },
     {
-      "name": "Voting",
-      "description": "VotingRounds and Votes"
+      "name" : "Voting",
+      "description" : "VotingRounds and Votes"
     },
     {
-      "name": "Reactions",
-      "description": "Live emoji reactions"
+      "name" : "Reactions",
+      "description" : "Live emoji reactions"
     }
   ],
-  "paths": {
-    "/users": {
-      "post": {
-        "tags": [
+  "paths" : {
+    "/users" : {
+      "post" : {
+        "tags" : [
           "Auth"
         ],
-        "summary": "Register a new user (S1)",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserPostDTO"
+        "summary" : "Register a new user (S1)",
+        "security" : [],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserPostDTO"
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "User created; token returned",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserTokenDTO"
+        "responses" : {
+          "201" : {
+            "description" : "User created; token returned",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserTokenDTO"
                 }
               }
             }
           },
-          "409": {
-            "description": "Username already taken"
+          "409" : {
+            "description" : "Username already taken"
           }
         }
       }
     },
-    "/auth/login": {
-      "post": {
-        "tags": [
+    "/auth/login" : {
+      "post" : {
+        "tags" : [
           "Auth"
         ],
-        "summary": "Login with username and password",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserPostDTO"
+        "summary" : "Login with username and password",
+        "security" : [],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserPostDTO"
               }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Login successful; token returned",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserTokenDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Login successful; token returned",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserTokenDTO"
                 }
               }
             }
           },
-          "401": {
-            "description": "Invalid credentials"
+          "401" : {
+            "description" : "Invalid credentials"
           },
-          "404": {
-            "description": "User not found"
+          "404" : {
+            "description" : "User not found"
           }
         }
       }
     },
-    "/auth/logout": {
-      "post": {
-        "tags": [
+    "/auth/logout" : {
+      "post" : {
+        "tags" : [
           "Auth"
         ],
-        "summary": "Logout (invalidates token)",
-        "responses": {
-          "204": {
-            "description": "Logged out successfully"
+        "summary" : "Logout (invalidates token)",
+        "responses" : {
+          "204" : {
+            "description" : "Logged out successfully"
           },
-          "401": {
-            "description": "Unauthorized"
+          "401" : {
+            "description" : "Unauthorized"
           }
         }
       }
     },
-    "/users/{userId}": {
-      "put": {
-        "tags": [
+    "/users/{userId}" : {
+      "put" : {
+        "tags" : [
           "Users"
         ],
-        "summary": "Update user \u2013 e.g. change password (S2)",
-        "parameters": [
+        "summary" : "Update user \u2013 e.g. change password (S2)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/userId"
+            "$ref" : "#/components/parameters/userId"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserPutDTO"
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserPutDTO"
               }
             }
           }
         },
-        "responses": {
-          "204": {
-            "description": "Updated successfully"
+        "responses" : {
+          "204" : {
+            "description" : "Updated successfully"
           },
-          "400": {
-            "description": "Password mismatch or invalid input"
+          "400" : {
+            "description" : "Password mismatch or invalid input"
           },
-          "403": {
-            "description": "Forbidden \u2013 can only edit own profile"
+          "403" : {
+            "description" : "Forbidden \u2013 can only edit own profile"
           },
-          "404": {
-            "description": "User not found"
+          "404" : {
+            "description" : "User not found"
           }
         }
       }
     },
-    "/users/{userId}/sessions": {
-      "get": {
-        "tags": [
+    "/users/{userId}/sessions" : {
+      "get" : {
+        "tags" : [
           "Users"
         ],
-        "summary": "Get session history for a user (S13)",
-        "parameters": [
+        "summary" : "Get session history for a user (S13)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/userId"
+            "$ref" : "#/components/parameters/userId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "List of sessions created or joined by user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SessionGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "List of sessions created or joined by user",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SessionGetDTO"
                   }
                 }
               }
             }
           },
-          "404": {
-            "description": "User not found"
+          "404" : {
+            "description" : "User not found"
           }
         }
       }
     },
-    "/sessions": {
-      "post": {
-        "tags": [
+    "/sessions" : {
+      "post" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "Create a new karaoke session (S3)",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SessionPostDTO"
+        "summary" : "Create a new karaoke session (S3)",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SessionPostDTO"
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "Session created; creator becomes admin",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionGetDTO"
+        "responses" : {
+          "201" : {
+            "description" : "Session created; creator becomes admin",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SessionGetDTO"
                 }
               }
             }
           },
-          "401": {
-            "description": "Unauthorized"
+          "401" : {
+            "description" : "Unauthorized"
           }
         }
       }
     },
-    "/sessions/pin/{gamePin}": {
-      "get": {
-        "tags": [
+    "/sessions/pin/{gamePin}" : {
+      "get" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "Look up a session by its game pin",
-        "parameters": [
+        "summary" : "Look up a session by its game pin",
+        "parameters" : [
           {
-            "name": "gamePin",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
+            "name" : "gamePin",
+            "in" : "path",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Session found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Session found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SessionGetDTO"
                 }
               }
             }
           },
-          "404": {
-            "description": "No session with that pin"
+          "404" : {
+            "description" : "No session with that pin"
           }
         }
       }
     },
-    "/sessions/{sessionId}": {
-      "get": {
-        "tags": [
+    "/sessions/{sessionId}" : {
+      "get" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "Get session details",
-        "parameters": [
+        "summary" : "Get session details",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Session details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Session details",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SessionGetDTO"
                 }
               }
             }
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           }
         }
       },
-      "put": {
-        "tags": [
+      "put" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "Update session status \u2013 start / pause / end (S4)",
-        "description": "Admin-only. Allowed transitions:\nCREATED \u2192 ACTIVE, ACTIVE \u2192 PAUSED, PAUSED \u2192 ACTIVE, ACTIVE|PAUSED \u2192 ENDED\n",
-        "parameters": [
+        "summary" : "Update session status \u2013 start / pause / end (S4)",
+        "description" : "Admin-only. Allowed transitions:\nCREATED \u2192 ACTIVE, ACTIVE \u2192 PAUSED, PAUSED \u2192 ACTIVE, ACTIVE|PAUSED \u2192 ENDED\n",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SessionPutDTO"
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SessionPutDTO"
               }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Session updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Session updated",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SessionGetDTO"
                 }
               }
             }
           },
-          "400": {
-            "description": "Invalid status transition"
+          "400" : {
+            "description" : "Invalid status transition"
           },
-          "403": {
-            "description": "Only the admin can change session status"
+          "403" : {
+            "description" : "Only the admin can change session status"
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/participants": {
-      "post": {
-        "tags": [
+    "/sessions/{sessionId}/participants" : {
+      "post" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "Join a session via game pin (S5)",
-        "parameters": [
+        "summary" : "Join a session via game pin (S5)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/JoinSessionDTO"
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/JoinSessionDTO"
               }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Joined successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Joined successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SessionGetDTO"
                 }
               }
             }
           },
-          "400": {
-            "description": "Invalid game pin"
+          "400" : {
+            "description" : "Invalid game pin"
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           }
         }
       },
-      "get": {
-        "tags": [
+      "get" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "List participants of a session",
-        "parameters": [
+        "summary" : "List participants of a session",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "List of participants",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UserGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "List of participants",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserGetDTO"
                   }
                 }
               }
@@ -406,121 +406,121 @@
         }
       }
     },
-    "/sessions/{sessionId}/participants/{userId}": {
-      "delete": {
-        "tags": [
+    "/sessions/{sessionId}/participants/{userId}" : {
+      "delete" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "Leave a session \u2013 unassigns user from it (S5)",
-        "description": "Soft-leave: the user is removed from the active participant list but the\nsession record is preserved (e.g. for session history). The session itself\nis not deleted. Triggers a WebSocket broadcast on /topic/sessions/{sessionId}/participants.\n",
-        "parameters": [
+        "summary" : "Leave a session \u2013 unassigns user from it (S5)",
+        "description" : "Soft-leave: the user is removed from the active participant list but the\nsession record is preserved (e.g. for session history). The session itself\nis not deleted. Triggers a WebSocket broadcast on /topic/sessions/{sessionId}/participants.\n",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           },
           {
-            "$ref": "#/components/parameters/userId"
+            "$ref" : "#/components/parameters/userId"
           }
         ],
-        "responses": {
-          "204": {
-            "description": "User unassigned from session successfully"
+        "responses" : {
+          "204" : {
+            "description" : "User unassigned from session successfully"
           },
-          "404": {
-            "description": "Session or participant not found"
+          "404" : {
+            "description" : "Session or participant not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/review": {
-      "get": {
-        "tags": [
+    "/sessions/{sessionId}/review" : {
+      "get" : {
+        "tags" : [
           "Sessions"
         ],
-        "summary": "Get post-session review of performed songs (S15)",
-        "parameters": [
+        "summary" : "Get post-session review of performed songs (S15)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "List of performed songs",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SongGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "List of performed songs",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SongGetDTO"
                   }
                 }
               }
             }
           },
-          "403": {
-            "description": "Session not ended yet"
+          "403" : {
+            "description" : "Session not ended yet"
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           }
         }
       }
     },
-    "/songs/search": {
-      "get": {
-        "tags": [
+    "/songs/search" : {
+      "get" : {
+        "tags" : [
           "Songs"
         ],
-        "summary": "Search songs by title or artist via Spotify Web API (S11)",
-        "parameters": [
+        "summary" : "Search songs by title or artist via Spotify Web API (S11)",
+        "parameters" : [
           {
-            "name": "query",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
+            "name" : "query",
+            "in" : "query",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Search results",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SongSearchResultDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Search results",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SongSearchResultDTO"
                   }
                 }
               }
             }
           },
-          "400": {
-            "description": "Missing or empty query"
+          "400" : {
+            "description" : "Missing or empty query"
           }
         }
       }
     },
-    "/sessions/{sessionId}/songs": {
-      "get": {
-        "tags": [
+    "/sessions/{sessionId}/songs" : {
+      "get" : {
+        "tags" : [
           "Songs"
         ],
-        "summary": "Get the ordered song queue of a session",
-        "parameters": [
+        "summary" : "Get the ordered song queue of a session",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Ordered song queue",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SongGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Ordered song queue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SongGetDTO"
                   }
                 }
               }
@@ -528,192 +528,192 @@
           }
         }
       },
-      "post": {
-        "tags": [
+      "post" : {
+        "tags" : [
           "Songs"
         ],
-        "summary": "Add a song to the session queue (S6, S10)",
-        "parameters": [
+        "summary" : "Add a song to the session queue (S6, S10)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SongPostDTO"
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SongPostDTO"
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "Song added to queue",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SongGetDTO"
+        "responses" : {
+          "201" : {
+            "description" : "Song added to queue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SongGetDTO"
                 }
               }
             }
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           },
-          "422": {
-            "description": "Lyrics not available for this song"
+          "422" : {
+            "description" : "Lyrics not available for this song"
           }
         }
       }
     },
-    "/sessions/{sessionId}/songs/current": {
-      "get": {
-        "tags": [
+    "/sessions/{sessionId}/songs/current" : {
+      "get" : {
+        "tags" : [
           "Songs"
         ],
-        "summary": "Get the currently playing song with lyrics (S8)",
-        "parameters": [
+        "summary" : "Get the currently playing song with lyrics (S8)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Current song with lyrics",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SongGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Current song with lyrics",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SongGetDTO"
                 }
               }
             }
           },
-          "204": {
-            "description": "No song currently playing"
+          "204" : {
+            "description" : "No song currently playing"
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/songs/skip": {
-      "post": {
-        "tags": [
+    "/sessions/{sessionId}/songs/skip" : {
+      "post" : {
+        "tags" : [
           "Songs"
         ],
-        "summary": "Skip the current song \u2013 admin only (S7)",
-        "description": "Advances the queue to the next song without waiting for the current one to finish.\nTriggers two WebSocket broadcasts:\n- /topic/sessions/{sessionId}/currentSong with the new current song\n- /topic/sessions/{sessionId}/votingRound when a new voting round starts automatically\n",
-        "parameters": [
+        "summary" : "Skip the current song \u2013 admin only (S7)",
+        "description" : "Advances the queue to the next song without waiting for the current one to finish.\nTriggers two WebSocket broadcasts:\n- /topic/sessions/{sessionId}/currentSong with the new current song\n- /topic/sessions/{sessionId}/votingRound when a new voting round starts automatically\n",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Skipped; next song returned",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SongGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Skipped; next song returned",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SongGetDTO"
                 }
               }
             }
           },
-          "403": {
-            "description": "Only admin can skip"
+          "403" : {
+            "description" : "Only admin can skip"
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/songs/{songId}": {
-      "delete": {
-        "tags": [
+    "/sessions/{sessionId}/songs/{songId}" : {
+      "delete" : {
+        "tags" : [
           "Songs"
         ],
-        "summary": "Remove a song from the queue \u2013 admin only (S7)",
-        "parameters": [
+        "summary" : "Remove a song from the queue \u2013 admin only (S7)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           },
           {
-            "$ref": "#/components/parameters/songId"
+            "$ref" : "#/components/parameters/songId"
           }
         ],
-        "responses": {
-          "204": {
-            "description": "Song removed"
+        "responses" : {
+          "204" : {
+            "description" : "Song removed"
           },
-          "403": {
-            "description": "Only admin can remove songs"
+          "403" : {
+            "description" : "Only admin can remove songs"
           },
-          "404": {
-            "description": "Song or session not found"
+          "404" : {
+            "description" : "Song or session not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/songs/{songId}/played": {
-      "put": {
-        "tags": [
+    "/sessions/{sessionId}/songs/{songId}/played" : {
+      "put" : {
+        "tags" : [
           "Songs"
         ],
-        "summary": "Mark a song as played \u2013 admin only",
-        "description": "Sets the `performed` flag on the song to true after it has been sung.",
-        "parameters": [
+        "summary" : "Mark a song as played \u2013 admin only",
+        "description" : "Sets the `performed` flag on the song to true after it has been sung.",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           },
           {
-            "$ref": "#/components/parameters/songId"
+            "$ref" : "#/components/parameters/songId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Song marked as played",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SongGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Song marked as played",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SongGetDTO"
                 }
               }
             }
           },
-          "403": {
-            "description": "Only admin can mark songs as played"
+          "403" : {
+            "description" : "Only admin can mark songs as played"
           },
-          "404": {
-            "description": "Song or session not found"
+          "404" : {
+            "description" : "Song or session not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/votingRounds": {
-      "get": {
-        "tags": [
+    "/sessions/{sessionId}/votingRounds" : {
+      "get" : {
+        "tags" : [
           "Voting"
         ],
-        "summary": "List all voting rounds of a session",
-        "description": "VotingRounds are started automatically by the server when a song ends.",
-        "parameters": [
+        "summary" : "List all voting rounds of a session",
+        "description" : "VotingRounds are started automatically by the server when a song ends.",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "List of voting rounds",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/VotingRoundGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "List of voting rounds",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/VotingRoundGetDTO"
                   }
                 }
               }
@@ -722,177 +722,177 @@
         }
       }
     },
-    "/sessions/{sessionId}/votingRounds/{roundId}": {
-      "get": {
-        "tags": [
+    "/sessions/{sessionId}/votingRounds/{roundId}" : {
+      "get" : {
+        "tags" : [
           "Voting"
         ],
-        "summary": "Get a specific voting round \u2013 leaderboard (S14)",
-        "parameters": [
+        "summary" : "Get a specific voting round \u2013 leaderboard (S14)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           },
           {
-            "$ref": "#/components/parameters/roundId"
+            "$ref" : "#/components/parameters/roundId"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Voting round with candidates sorted by vote count",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VotingRoundGetDTO"
+        "responses" : {
+          "200" : {
+            "description" : "Voting round with candidates sorted by vote count",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VotingRoundGetDTO"
                 }
               }
             }
           },
-          "404": {
-            "description": "Not found"
+          "404" : {
+            "description" : "Not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/votingRounds/{roundId}/votes": {
-      "post": {
-        "tags": [
+    "/sessions/{sessionId}/votingRounds/{roundId}/votes" : {
+      "post" : {
+        "tags" : [
           "Voting"
         ],
-        "summary": "Cast a vote for a candidate song (S12)",
-        "parameters": [
+        "summary" : "Cast a vote for a candidate song (S12)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           },
           {
-            "$ref": "#/components/parameters/roundId"
+            "$ref" : "#/components/parameters/roundId"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VotePostDTO"
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VotePostDTO"
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "Vote cast"
+        "responses" : {
+          "201" : {
+            "description" : "Vote cast"
           },
-          "400": {
-            "description": "Song is not a candidate in this round"
+          "400" : {
+            "description" : "Song is not a candidate in this round"
           },
-          "409": {
-            "description": "User has already voted in this round"
+          "409" : {
+            "description" : "User has already voted in this round"
           },
-          "410": {
-            "description": "Voting round is CLOSED"
+          "410" : {
+            "description" : "Voting round is CLOSED"
           },
-          "403": {
-            "description": "User is not a session participant"
+          "403" : {
+            "description" : "User is not a session participant"
           },
-          "404": {
-            "description": "Voting round or song not found"
+          "404" : {
+            "description" : "Voting round or song not found"
           }
         }
       }
     },
-    "/sessions/{sessionId}/reactions": {
-      "post": {
-        "tags": [
+    "/sessions/{sessionId}/reactions" : {
+      "post" : {
+        "tags" : [
           "Reactions"
         ],
-        "summary": "Send a live reaction during a performance (S9)",
-        "parameters": [
+        "summary" : "Send a live reaction during a performance (S9)",
+        "parameters" : [
           {
-            "$ref": "#/components/parameters/sessionId"
+            "$ref" : "#/components/parameters/sessionId"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReactionPostDTO"
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReactionPostDTO"
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "Reaction sent"
+        "responses" : {
+          "201" : {
+            "description" : "Reaction sent"
           },
-          "400": {
-            "description": "No song currently performing"
+          "400" : {
+            "description" : "No song currently performing"
           },
-          "404": {
-            "description": "Session not found"
+          "404" : {
+            "description" : "Session not found"
           }
         }
       }
     }
   },
-  "components": {
-    "parameters": {
-      "userId": {
-        "name": "userId",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "format": "int64"
+  "components" : {
+    "parameters" : {
+      "userId" : {
+        "name" : "userId",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "integer",
+          "format" : "int64"
         }
       },
-      "sessionId": {
-        "name": "sessionId",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "format": "int64"
+      "sessionId" : {
+        "name" : "sessionId",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "integer",
+          "format" : "int64"
         }
       },
-      "songId": {
-        "name": "songId",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "format": "int64"
+      "songId" : {
+        "name" : "songId",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "integer",
+          "format" : "int64"
         }
       },
-      "roundId": {
-        "name": "roundId",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "format": "int64"
+      "roundId" : {
+        "name" : "roundId",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "integer",
+          "format" : "int64"
         }
       }
     },
-    "schemas": {
-      "SessionStatus": {
-        "type": "string",
-        "enum": [
+    "schemas" : {
+      "SessionStatus" : {
+        "type" : "string",
+        "enum" : [
           "CREATED",
           "ACTIVE",
           "PAUSED",
           "ENDED"
         ]
       },
-      "VotingStatus": {
-        "type": "string",
-        "enum": [
+      "VotingStatus" : {
+        "type" : "string",
+        "enum" : [
           "OPEN",
           "CLOSED"
         ]
       },
-      "ReactionType": {
-        "type": "string",
-        "enum": [
+      "ReactionType" : {
+        "type" : "string",
+        "enum" : [
           "FIRE",
           "HEART",
           "CLAP",
@@ -900,294 +900,294 @@
           "SKULL"
         ]
       },
-      "UserPostDTO": {
-        "type": "object",
-        "required": [
+      "UserPostDTO" : {
+        "type" : "object",
+        "required" : [
           "username",
           "password"
         ],
-        "properties": {
-          "username": {
-            "type": "string",
-            "example": "dominic42"
+        "properties" : {
+          "username" : {
+            "type" : "string",
+            "example" : "dominic42"
           },
-          "password": {
-            "type": "string",
-            "format": "password"
+          "password" : {
+            "type" : "string",
+            "format" : "password"
           }
         }
       },
-      "UserPutDTO": {
-        "type": "object",
-        "properties": {
-          "newPassword": {
-            "type": "string",
-            "format": "password"
+      "UserPutDTO" : {
+        "type" : "object",
+        "properties" : {
+          "newPassword" : {
+            "type" : "string",
+            "format" : "password"
           },
-          "oldPassword": {
-            "type": "string",
-            "format": "password"
+          "oldPassword" : {
+            "type" : "string",
+            "format" : "password"
           }
         }
       },
-      "UserGetDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
+      "UserGetDTO" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
           },
-          "username": {
-            "type": "string"
+          "username" : {
+            "type" : "string"
           }
         }
       },
-      "UserTokenDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
+      "UserTokenDTO" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
           },
-          "username": {
-            "type": "string"
+          "username" : {
+            "type" : "string"
           },
-          "token": {
-            "type": "string",
-            "format": "uuid"
+          "token" : {
+            "type" : "string",
+            "format" : "uuid"
           }
         }
       },
-      "SessionPostDTO": {
-        "type": "object",
-        "required": [
+      "SessionPostDTO" : {
+        "type" : "object",
+        "required" : [
           "name"
         ],
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Friday Night Karaoke"
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "example" : "Friday Night Karaoke"
           },
-          "description": {
-            "type": "string"
+          "description" : {
+            "type" : "string"
           }
         }
       },
-      "SessionPutDTO": {
-        "type": "object",
-        "required": [
+      "SessionPutDTO" : {
+        "type" : "object",
+        "required" : [
           "status"
         ],
-        "properties": {
-          "status": {
-            "$ref": "#/components/schemas/SessionStatus"
+        "properties" : {
+          "status" : {
+            "$ref" : "#/components/schemas/SessionStatus"
           }
         }
       },
-      "SessionGetDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
+      "SessionGetDTO" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
           },
-          "name": {
-            "type": "string"
+          "name" : {
+            "type" : "string"
           },
-          "description": {
-            "type": "string"
+          "description" : {
+            "type" : "string"
           },
-          "gamePin": {
-            "type": "string",
-            "example": "482910"
+          "gamePin" : {
+            "type" : "string",
+            "example" : "482910"
           },
-          "status": {
-            "$ref": "#/components/schemas/SessionStatus"
+          "status" : {
+            "$ref" : "#/components/schemas/SessionStatus"
           },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
-          "admin": {
-            "$ref": "#/components/schemas/UserGetDTO"
+          "admin" : {
+            "$ref" : "#/components/schemas/UserGetDTO"
           },
-          "participants": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserGetDTO"
+          "participants" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGetDTO"
             }
           },
-          "requiresSongSelection": {
-            "type": "boolean",
-            "description": "True only in the join endpoint response — indicates the caller still needs to add their initial song before interacting with the session. Null in all other context."
+          "requiresSongSelection" : {
+            "type" : "boolean",
+            "description" : "True only in the join endpoint response — indicates the caller still needs to add their initial song before interacting with the session. Null in all other context."
           }
         }
       },
-      "JoinSessionDTO": {
-        "type": "object",
-        "required": [
+      "JoinSessionDTO" : {
+        "type" : "object",
+        "required" : [
           "gamePin"
         ],
-        "properties": {
-          "gamePin": {
-            "type": "string",
-            "example": "482910"
+        "properties" : {
+          "gamePin" : {
+            "type" : "string",
+            "example" : "482910"
           }
         }
       },
-      "SongPostDTO": {
-        "type": "object",
-        "required": [
+      "SongPostDTO" : {
+        "type" : "object",
+        "required" : [
           "spotifyId",
           "title",
           "artist",
           "durationMs"
         ],
-        "properties": {
-          "spotifyId": {
-            "type": "string"
+        "properties" : {
+          "spotifyId" : {
+            "type" : "string"
           },
-          "title": {
-            "type": "string",
-            "example": "Dancing Queen"
+          "title" : {
+            "type" : "string",
+            "example" : "Dancing Queen"
           },
-          "artist": {
-            "type": "string",
-            "example": "ABBA"
+          "artist" : {
+            "type" : "string",
+            "example" : "ABBA"
           },
-          "albumArt": {
-            "type": "string",
-            "nullable": true
+          "albumArt" : {
+            "type" : "string",
+            "nullable" : true
           },
-          "durationMs": {
-            "type": "integer",
-            "example": 354000
+          "durationMs" : {
+            "type" : "integer",
+            "example" : 354000
           }
         }
       },
-      "SongGetDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
+      "SongGetDTO" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
           },
-          "spotifyId": {
-            "type": "string",
-            "nullable": true
+          "spotifyId" : {
+            "type" : "string",
+            "nullable" : true
           },
-          "title": {
-            "type": "string"
+          "title" : {
+            "type" : "string"
           },
-          "artist": {
-            "type": "string"
+          "artist" : {
+            "type" : "string"
           },
-          "lyrics": {
-            "type": "string",
-            "nullable": true
+          "lyrics" : {
+            "type" : "string",
+            "nullable" : true
           },
-          "currentVoteCount": {
-            "type": "integer"
+          "currentVoteCount" : {
+            "type" : "integer"
           },
-          "performed": {
-            "type": "boolean"
+          "performed" : {
+            "type" : "boolean"
           },
-          "addedBy": {
-            "$ref": "#/components/schemas/UserGetDTO"
+          "addedBy" : {
+            "$ref" : "#/components/schemas/UserGetDTO"
           },
-          "albumArt": {
-            "type": "string",
-            "nullable": true
+          "albumArt" : {
+            "type" : "string",
+            "nullable" : true
           },
-          "durationMs": {
-            "type": "integer"
+          "durationMs" : {
+            "type" : "integer"
           }
         }
       },
-      "SongSearchResultDTO": {
-        "type": "object",
-        "properties": {
-          "spotifyId": {
-            "type": "string",
-            "nullable": true
+      "SongSearchResultDTO" : {
+        "type" : "object",
+        "properties" : {
+          "spotifyId" : {
+            "type" : "string",
+            "nullable" : true
           },
-          "title": {
-            "type": "string"
+          "title" : {
+            "type" : "string"
           },
-          "artist": {
-            "type": "string"
+          "artist" : {
+            "type" : "string"
           },
-          "lyricsAvailable": {
-            "type": "boolean"
+          "lyricsAvailable" : {
+            "type" : "boolean"
           },
-          "albumArt": {
-            "type": "string",
-            "nullable": true
+          "albumArt" : {
+            "type" : "string",
+            "nullable" : true
           },
-          "durationMs": {
-            "type": "integer"
+          "durationMs" : {
+            "type" : "integer"
           }
         }
       },
-      "VotingRoundGetDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
+      "VotingRoundGetDTO" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
           },
-          "roundNumber": {
-            "type": "integer"
+          "roundNumber" : {
+            "type" : "integer"
           },
-          "status": {
-            "$ref": "#/components/schemas/VotingStatus"
+          "status" : {
+            "$ref" : "#/components/schemas/VotingStatus"
           },
-          "startedAt": {
-            "type": "string",
-            "format": "date-time"
+          "startedAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
-          "endsAt": {
-            "type": "string",
-            "format": "date-time"
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
-          "candidates": {
-            "type": "array",
-            "description": "Sorted descending by currentVoteCount",
-            "items": {
-              "$ref": "#/components/schemas/SongGetDTO"
+          "candidates" : {
+            "type" : "array",
+            "description" : "Sorted descending by currentVoteCount",
+            "items" : {
+              "$ref" : "#/components/schemas/SongGetDTO"
             }
           }
         }
       },
-      "VotePostDTO": {
-        "type": "object",
-        "required": [
+      "VotePostDTO" : {
+        "type" : "object",
+        "required" : [
           "songId"
         ],
-        "properties": {
-          "songId": {
-            "type": "integer",
-            "format": "int64"
+        "properties" : {
+          "songId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
-      "ReactionPostDTO": {
-        "type": "object",
-        "required": [
+      "ReactionPostDTO" : {
+        "type" : "object",
+        "required" : [
           "type"
         ],
-        "properties": {
-          "type": {
-            "$ref": "#/components/schemas/ReactionType"
+        "properties" : {
+          "type" : {
+            "$ref" : "#/components/schemas/ReactionType"
           }
         }
       }
     },
-    "securitySchemes": {
-      "token": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "token"
+    "securitySchemes" : {
+      "token" : {
+        "type" : "apiKey",
+        "in" : "header",
+        "name" : "token"
       }
     }
   }

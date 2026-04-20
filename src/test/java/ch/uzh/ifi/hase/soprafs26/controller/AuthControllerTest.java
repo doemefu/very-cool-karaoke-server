@@ -26,37 +26,37 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AuthController.class)
 public class AuthControllerTest {
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-	@MockitoBean
-	private UserService userService;
+    @MockitoBean
+    private UserService userService;
 
-	@Test
-	public void createUser_validInput_userCreated() throws Exception {
-		// given
-		User user = new User();
-		user.setId(1L);
-		user.setUsername("testUsername");
-		user.setToken("1");
+    @Test
+    public void createUser_validInput_userCreated() throws Exception {
+        // given
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("testUsername");
+        user.setToken("1");
 
-		UserPostDTO userPostDTO = new UserPostDTO();
-		userPostDTO.setUsername("testUsername");
+        UserPostDTO userPostDTO = new UserPostDTO();
+        userPostDTO.setUsername("testUsername");
         userPostDTO.setPassword("password");
 
-		given(userService.createUser(Mockito.any())).willReturn(user);
+        given(userService.createUser(Mockito.any())).willReturn(user);
 
-		// when/then -> do the request + validate the result
-		MockHttpServletRequestBuilder postRequest = post("/users")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(asJsonString(userPostDTO));
+        // when/then -> do the request + validate the result
+        MockHttpServletRequestBuilder postRequest = post("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(userPostDTO));
 
-		// then
-		mockMvc.perform(postRequest)
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.id", is(user.getId().intValue())))
-				.andExpect(jsonPath("$.username", is(user.getUsername())));
-	}
+        // then
+        mockMvc.perform(postRequest)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+                .andExpect(jsonPath("$.username", is(user.getUsername())));
+    }
 
     @Test
     public void loginUser_validCredentials_returnsToken() throws Exception {
@@ -114,12 +114,13 @@ public class AuthControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-	private String asJsonString(final Object object) {
-		try {
-			return new ObjectMapper().writeValueAsString(object);
-		} catch (JacksonException e) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					String.format("The request body could not be created.%s", e.toString()));
-		}
-	}
+    private String asJsonString(final Object object) {
+        try {
+            return new ObjectMapper().writeValueAsString(object);
+        }
+        catch (JacksonException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    String.format("The request body could not be created.%s", e));
+        }
+    }
 }

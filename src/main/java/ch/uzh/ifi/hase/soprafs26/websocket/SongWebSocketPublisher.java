@@ -16,5 +16,6 @@ public interface SongWebSocketPublisher {
     void broadcastCurrentSong(Long sessionId, SongGetDTO currentSong);
 
     void broadcastQueue(Long sessionId, List<SongGetDTO> queue);
+
     void broadcastLyrics(Long sessionId, String lyrics);
 }

@@ -7,5 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository("songRepository")
 public interface SongRepository extends JpaRepository<Song, Long> {
     Song findBySpotifyId(String spotifyId);
+
     Song findByTitle(String title);
 }

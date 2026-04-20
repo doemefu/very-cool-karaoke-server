@@ -14,13 +14,23 @@ public class ReactionGetDTO {
     private UserGetDTO sender;
     private SongGetDTO duringPerformance;
 
-    public void setId(Long id) { this.id = id; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public void setType(ReactionType type) { this.type = type; }
+    public void setType(ReactionType type) {
+        this.type = type;
+    }
 
-    public void setSentAt(Instant sentAt) { this.sentAt = sentAt; }
+    public void setSentAt(Instant sentAt) {
+        this.sentAt = sentAt;
+    }
 
-    public void setSender(UserGetDTO sender) { this.sender = sender; }
+    public void setSender(UserGetDTO sender) {
+        this.sender = sender;
+    }
 
-    public void setDuringPerformance(SongGetDTO duringPerformance) { this.duringPerformance = duringPerformance; }
+    public void setDuringPerformance(SongGetDTO duringPerformance) {
+        this.duringPerformance = duringPerformance;
+    }
 }

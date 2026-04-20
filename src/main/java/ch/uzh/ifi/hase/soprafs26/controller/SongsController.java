@@ -4,10 +4,10 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.service.SongService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 

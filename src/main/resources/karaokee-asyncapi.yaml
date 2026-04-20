@@ -192,15 +192,15 @@ components:
 
     SessionStatus:
       type: string
-      enum: [CREATED, ACTIVE, PAUSED, ENDED]
+      enum: [ CREATED, ACTIVE, PAUSED, ENDED ]
 
     VotingStatus:
       type: string
-      enum: [OPEN, CLOSED]
+      enum: [ OPEN, CLOSED ]
 
     ReactionType:
       type: string
-      enum: [FIRE, HEART, CLAP, LAUGH, SKULL]
+      enum: [ FIRE, HEART, CLAP, LAUGH, SKULL ]
 
     UserDTO:
       type: object

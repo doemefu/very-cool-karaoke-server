@@ -35,9 +35,9 @@ public class VotingRound {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "voting_round_candidates",
-        joinColumns = @JoinColumn(name = "voting_round_id"),
-        inverseJoinColumns = @JoinColumn(name = "song_id")
+            name = "voting_round_candidates",
+            joinColumns = @JoinColumn(name = "voting_round_id"),
+            inverseJoinColumns = @JoinColumn(name = "song_id")
     )
     private List<Song> candidates = new ArrayList<>();
 

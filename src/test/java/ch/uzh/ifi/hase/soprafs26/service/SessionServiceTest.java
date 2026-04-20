@@ -222,9 +222,9 @@ class SessionServiceTest {
     void leaveSession_sessionDataCompletelyUnchanged() {
         // Session name, status, and admin must survive a participant leave
         session.addParticipant(participant);
-        String originalName   = session.getName();
+        String originalName = session.getName();
         SessionStatus originalStatus = session.getStatus();
-        User originalAdmin    = session.getAdmin();
+        User originalAdmin = session.getAdmin();
 
         when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
         when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
@@ -232,11 +232,11 @@ class SessionServiceTest {
 
         sessionService.leaveSession(10L, 2L);
 
-        assertEquals(originalName,   session.getName(),
+        assertEquals(originalName, session.getName(),
                 "Session name must not change when a user leaves");
         assertEquals(originalStatus, session.getStatus(),
                 "Session status must not change when a user leaves");
-        assertEquals(originalAdmin,  session.getAdmin(),
+        assertEquals(originalAdmin, session.getAdmin(),
                 "Session admin must not change when a user leaves");
     }
 

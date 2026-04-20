@@ -1,9 +1,13 @@
 package ch.uzh.ifi.hase.soprafs26.service;
 
 import ch.uzh.ifi.hase.soprafs26.constant.VotingStatus;
-import ch.uzh.ifi.hase.soprafs26.entity.*;
-import ch.uzh.ifi.hase.soprafs26.repository.*;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
+import ch.uzh.ifi.hase.soprafs26.entity.Vote;
+import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
+import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
+import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
+import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,7 +80,7 @@ public class VotingService {
 
     public Map<Long, Long> getVoteCounts(VotingRound round) {
         return voteRepository.countVotesPerSong(round).stream().collect(Collectors.toMap(
-                        VoteRepository.SongVoteCount::getSongId, VoteRepository.SongVoteCount::getCount));
+                VoteRepository.SongVoteCount::getSongId, VoteRepository.SongVoteCount::getCount));
     }
 
 

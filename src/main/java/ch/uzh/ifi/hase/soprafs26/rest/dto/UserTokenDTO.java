@@ -8,7 +8,9 @@ public class UserTokenDTO {
     private LocalDate createdAt;
     private String token;
 
-    public Long getId() { return id; }
+    public Long getId() {
+        return id;
+    }
 
     public void setId(Long id) {
         this.id = id;
@@ -22,11 +24,19 @@ public class UserTokenDTO {
         this.username = username;
     }
 
-    public LocalDate getCreatedAt() { return createdAt; }
+    public LocalDate getCreatedAt() {
+        return createdAt;
+    }
 
-    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
+    public void setCreatedAt(LocalDate createdAt) {
+        this.createdAt = createdAt;
+    }
 
-    public String getToken() { return token; }
+    public String getToken() {
+        return token;
+    }
 
-    public void setToken(String token) { this.token = token; }
+    public void setToken(String token) {
+        this.token = token;
+    }
 }

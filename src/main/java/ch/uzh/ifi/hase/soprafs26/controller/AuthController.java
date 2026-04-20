@@ -18,6 +18,7 @@ public class AuthController implements AuthApi {
 
     private final UserService userService;
     private final HttpServletRequest request;
+
     AuthController(UserService userService, HttpServletRequest request) {
         this.userService = userService;
         this.request = request;

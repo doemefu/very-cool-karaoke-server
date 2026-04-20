@@ -1,5 +1,6 @@
 package ch.uzh.ifi.hase.soprafs26.rest.mapper;
 
+import ch.uzh.ifi.hase.soprafs26.entity.Session;
 import ch.uzh.ifi.hase.soprafs26.entity.Song;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
@@ -9,8 +10,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
-
-import ch.uzh.ifi.hase.soprafs26.entity.Session;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -47,9 +46,9 @@ public interface DTOMapper {
     @Mapping(source = "createdAt", target = "createdAt")
     UserGetDTO convertEntityToUserGetDTO(User user);
 
-    @Mapping(source = "admin",        target = "admin")
-    @Mapping(source = "participants",  target = "participants")
-    @Mapping(source = "createdAt",     target = "createdAt")
+    @Mapping(source = "admin", target = "admin")
+    @Mapping(source = "participants", target = "participants")
+    @Mapping(source = "createdAt", target = "createdAt")
     SessionGetDTO convertEntityToSessionGetDTO(Session session);
 
     default OffsetDateTime map(LocalDateTime localDateTime) {

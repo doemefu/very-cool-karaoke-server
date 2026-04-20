@@ -16,14 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.*;
 
 @Service
 @Transactional
@@ -70,8 +63,8 @@ public class SessionService {
 
     public Session getSessionById(Long sessionId) {
         return sessionRepository.findById(sessionId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Session not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session not found"));
     }
 
     public Session getSessionByPin(String gamePin) {
@@ -88,21 +81,21 @@ public class SessionService {
 
         if (!session.getAdmin().getId().equals(requesterId)) {
             throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN, "Only the admin can change session status");
+                    HttpStatus.FORBIDDEN, "Only the admin can change session status");
         }
 
         SessionStatus current = session.getStatus();
         boolean validTransition =
-            (current == SessionStatus.CREATED && newStatus == SessionStatus.ACTIVE) ||
-            (current == SessionStatus.ACTIVE  && newStatus == SessionStatus.PAUSED)  ||
-            (current == SessionStatus.PAUSED  && newStatus == SessionStatus.ACTIVE)  ||
-            (current == SessionStatus.ACTIVE  && newStatus == SessionStatus.ENDED)   ||
-            (current == SessionStatus.PAUSED  && newStatus == SessionStatus.ENDED);
+                (current == SessionStatus.CREATED && newStatus == SessionStatus.ACTIVE) ||
+                        (current == SessionStatus.ACTIVE && newStatus == SessionStatus.PAUSED) ||
+                        (current == SessionStatus.PAUSED && newStatus == SessionStatus.ACTIVE) ||
+                        (current == SessionStatus.ACTIVE && newStatus == SessionStatus.ENDED) ||
+                        (current == SessionStatus.PAUSED && newStatus == SessionStatus.ENDED);
 
         if (!validTransition) {
             throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Invalid status transition: " + current + " → " + newStatus);
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid status transition: " + current + " → " + newStatus);
         }
 
         session.setStatus(newStatus);
@@ -112,11 +105,11 @@ public class SessionService {
 
     /**
      * Add a user to a session's participant list via game PIN.
-     *
+     * <p>
      * Idempotency: if the user is already a participant (re-join case),
      * {@code Session.addParticipant()} is a Set no-op — no error is
      * thrown and no duplicate row is inserted into session_participants.
-     *
+     * <p>
      * Corresponds to: POST /sessions/{sessionId}/participants
      *
      * @param sessionId target session
@@ -128,17 +121,17 @@ public class SessionService {
      */
     public Session joinSession(Long sessionId, String gamePin, Long userId) {
         Session session = sessionRepository.findById(sessionId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Session not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session not found"));
 
         if (!session.getGamePin().equals(gamePin)) {
             throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, "Invalid game pin");
+                    HttpStatus.BAD_REQUEST, "Invalid game pin");
         }
 
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found"));
 
         boolean isNewParticipant = !session.getParticipants().contains(user);
 
@@ -146,7 +139,7 @@ public class SessionService {
         session.addParticipant(user);
 
         if (isNewParticipant) {
-        session.addToPendingInitialSong(user);
+            session.addToPendingInitialSong(user);
         }
 
         Session saved = sessionRepository.save(session);
@@ -162,7 +155,7 @@ public class SessionService {
                 .findFirst()
                 .ifPresent(s -> {
                     songWebSocketPublisher.broadcastCurrentSong(sessionId,
-                        DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes));
+                            DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes));
                     songWebSocketPublisher.broadcastLyrics(sessionId, s.getLyrics());
                 });
 
@@ -173,11 +166,11 @@ public class SessionService {
 
     /**
      * Remove a user from a session's participant list (soft-leave).
-     *
+     * <p>
      * The session record and all its data are preserved; only the join-
      * table row is deleted. This satisfies the S5 acceptance criterion
      * "The session itself is not affected by users leaving or rejoining."
-     *
+     * <p>
      * Corresponds to: PUT /sessions/{sessionId}/participants/{userId}
      *
      * @param sessionId session the user wants to leave
@@ -186,12 +179,12 @@ public class SessionService {
      */
     public void leaveSession(Long sessionId, Long userId) {
         Session session = sessionRepository.findById(sessionId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Session or participant not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session or participant not found"));
 
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Session or participant not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session or participant not found"));
 
         session.removeParticipant(user);
         sessionRepository.save(session);
@@ -201,7 +194,7 @@ public class SessionService {
 
     /**
      * Return all current participants of a session.
-     *
+     * <p>
      * Corresponds to: GET /sessions/{sessionId}/participants
      *
      * @param sessionId the session to query
@@ -211,8 +204,8 @@ public class SessionService {
     @Transactional(readOnly = true)
     public Set<User> getParticipants(Long sessionId) {
         Session session = sessionRepository.findById(sessionId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Session not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Session not found"));
         return session.getParticipants();
     }
 
@@ -220,8 +213,8 @@ public class SessionService {
     @Transactional(readOnly = true)
     public List<Session> getSessionsByUser(Long userId) {
         userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found"));
 
         List<Session> created = sessionRepository.findByAdminId(userId);
         List<Session> joined = sessionRepository.findByParticipantId(userId);
@@ -236,19 +229,19 @@ public class SessionService {
     public boolean requiresSongSelection(Long sessionId, Long userId) {
         Session session = getSessionById(sessionId);
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found"));
         return session.isPendingInitialSong(user);
     }
 
     public void markInitialSongAdded(Long sessionId, Long userId) {
         Session session = getSessionById(sessionId);
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found"));
         session.removeFromPendingInitialSong(user);
         sessionRepository.save(session);
         log.debug("User {} fulfilled initial song requirement for session {}",
-            userId, sessionId);
+                userId, sessionId);
     }
 }

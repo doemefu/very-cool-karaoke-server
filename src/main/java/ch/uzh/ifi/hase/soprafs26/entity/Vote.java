@@ -3,19 +3,19 @@ package ch.uzh.ifi.hase.soprafs26.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import org.hibernate.annotations.CreationTimestamp;
 
 @Getter
 @Setter
 @Entity
 @Table(
-    name = "votes",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uq_vote_round_voter",
-        columnNames = {"voting_round_id", "voter_id"}
-    )
+        name = "votes",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_vote_round_voter",
+                columnNames = {"voting_round_id", "voter_id"}
+        )
 )
 public class Vote {
 

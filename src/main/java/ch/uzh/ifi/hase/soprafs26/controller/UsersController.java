@@ -1,19 +1,16 @@
 package ch.uzh.ifi.hase.soprafs26.controller;
 
+import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.UserPutDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs26.service.SessionService;
 import ch.uzh.ifi.hase.soprafs26.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-
-import ch.uzh.ifi.hase.soprafs26.entity.Session;
-import ch.uzh.ifi.hase.soprafs26.entity.User;
-import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
-import ch.uzh.ifi.hase.soprafs26.service.SessionService;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -56,13 +53,13 @@ public class UsersController implements UsersApi {
 
         if (!requester.getId().equals(userId)) {
             throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN, "Can only view your own session history");
+                    HttpStatus.FORBIDDEN, "Can only view your own session history");
         }
-        
+
         List<SessionGetDTO> dtos = sessionService.getSessionsByUser(userId)
-            .stream()
-            .map(DTOMapper.INSTANCE::convertEntityToSessionGetDTO)
-            .collect(Collectors.toList());
+                .stream()
+                .map(DTOMapper.INSTANCE::convertEntityToSessionGetDTO)
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
     }

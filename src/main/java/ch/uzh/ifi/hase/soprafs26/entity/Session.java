@@ -7,10 +7,10 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.ArrayList;
-import java.util.List; 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Setter
 @Getter
@@ -54,18 +54,18 @@ public class Session {
      */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "session_participants",
-        joinColumns = @JoinColumn(name = "session_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
+            name = "session_participants",
+            joinColumns = @JoinColumn(name = "session_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
     )
 
     private Set<User> participants = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "session_pending_initial_song",
-        joinColumns = @JoinColumn(name = "session_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
+            name = "session_pending_initial_song",
+            joinColumns = @JoinColumn(name = "session_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private Set<User> pendingInitialSong = new HashSet<>();
 
@@ -88,7 +88,8 @@ public class Session {
     }
 
     /**
-    add a user to the participant set
+     * add a user to the participant set
+     *
      * @param user the user to add; must not be null
      */
     public void addParticipant(User user) {
@@ -96,21 +97,22 @@ public class Session {
     }
 
     /**
-    remove a user from the participant set (soft-leave).
-    @param user the user to remove; no-op if not currently a participant
-    */
+     * remove a user from the participant set (soft-leave).
+     *
+     * @param user the user to remove; no-op if not currently a participant
+     */
     public void removeParticipant(User user) {
         this.participants.remove(user);
     }
 
     public void addSong(Song song) {
-        playlist.add(song);       
-        song.setSession(this);    
+        playlist.add(song);
+        song.setSession(this);
     }
 
     public void removeSong(Song song) {
-        playlist.remove(song);    
-        song.setSession(null);    
+        playlist.remove(song);
+        song.setSession(null);
     }
 
     public void addToPendingInitialSong(User user) {

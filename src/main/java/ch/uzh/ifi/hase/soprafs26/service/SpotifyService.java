@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs26.service;
 
-import tools.jackson.databind.JsonNode;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +12,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +23,11 @@ public class SpotifyService {
     private static final Logger log = LoggerFactory.getLogger(SpotifyService.class);
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     private static final String SEARCH_URL = "https://api.spotify.com/v1/search?q={q}&type=track&limit=5";
-
+    private final RestTemplate restTemplate;
     @Value("${SPOTIFY_CLIENT_ID:}")
     private String clientId = "";
-
     @Value("${SPOTIFY_CLIENT_SECRET:}")
     private String clientSecret = "";
-
-    private final RestTemplate restTemplate;
     private String accessToken;
 
     public SpotifyService(RestTemplate restTemplate) {
@@ -104,8 +101,14 @@ public class SpotifyService {
     }
 
     // Package-private accessors for testing
-    String getAccessToken() { return accessToken; }
-    void setAccessToken(String token) { this.accessToken = token; }
+    String getAccessToken() {
+        return accessToken;
+    }
+
+    void setAccessToken(String token) {
+        this.accessToken = token;
+    }
+
     void setCredentials(String clientId, String clientSecret) {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
