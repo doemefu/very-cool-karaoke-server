@@ -81,6 +81,9 @@ public class SpotifyService {
     }
 
     private List<SpotifyTrack> doSearch(String query) {
+        if (accessToken == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Spotify not configured");
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 

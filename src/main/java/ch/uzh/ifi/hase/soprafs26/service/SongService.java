@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class SongService {
@@ -57,8 +58,9 @@ public class SongService {
         CompletableFuture.allOf(lyricsFutures.toArray(new CompletableFuture[0])).join();
 
         // Build DTOs and populate cache
-        return tracks.stream().map(track -> {
-            String lyrics = lyricsFutures.get(tracks.indexOf(track)).join();
+        return IntStream.range(0, tracks.size()).mapToObj(i -> {
+            SpotifyTrack track = tracks.get(i);
+            String lyrics = lyricsFutures.get(i).join();
             lyricsCache.put(track.spotifyId(), Optional.ofNullable(lyrics));
 
             SongSearchResultDTO dto = new SongSearchResultDTO();

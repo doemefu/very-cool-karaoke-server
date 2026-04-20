@@ -100,7 +100,7 @@ public class AuthControllerTest {
         Mockito.doNothing().when(userService).logoutUser(Mockito.any());
 
         mockMvc.perform(post("/auth/logout")
-                        .header("Authorization", "Bearer test-token"))
+                        .header("token", "test-token"))
                 .andExpect(status().isNoContent());
     }
 
@@ -110,7 +110,7 @@ public class AuthControllerTest {
                 .when(userService).logoutUser(Mockito.any());
 
         mockMvc.perform(post("/auth/logout")
-                        .header("Authorization", "Bearer invalid-token"))
+                        .header("token", "invalid-token"))
                 .andExpect(status().isUnauthorized());
     }
 

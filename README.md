@@ -31,7 +31,7 @@ Start the server locally, then open:
 | Swagger UI | http://localhost:8080/swagger-ui.html | All REST endpoints (from YAML) |
 | Springwolf | http://localhost:8080/springwolf/asyncapi-ui.html | All WebSocket/STOMP events |
 
-Swagger UI renders directly from `karaokee-openapi.yaml`, so it always shows **all endpoints** — including ones not yet implemented. Unimplemented endpoints return `501 Not Implemented` until overridden in a controller.
+Swagger UI renders directly from `karaokee-openapi.json`, so it always shows **all endpoints** — including ones not yet implemented. Unimplemented endpoints return `501 Not Implemented` until overridden in a controller.
 
 ---
 
@@ -77,7 +77,7 @@ To get live rendering of the OpenAPI and AsyncAPI YAML files directly in Intelli
 
 1. Install the **OpenAPI Specifications** plugin:
    `IntelliJ → Settings → Plugins → search "OpenAPI Specifications"` (by JetBrains)
-2. Open `karaokee-openapi.yaml` – a Swagger UI preview appears in the editor split view.
+2. Open `karaokee-openapi.json` – a Swagger UI preview appears in the editor split view.
 3. A `Run` gutter icon lets you start a local Swagger UI server for the file.
 
 ### YAML Schema Validation
@@ -86,7 +86,7 @@ To get autocompletion and validation for both spec files in IntelliJ:
 
 1. `Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema Mappings`
 2. Add mapping:
-    - `karaokee-openapi.yaml` → Schema URL: `https://spec.openapis.org/oas/3.0/schema/2021-09-28`
+    - `karaokee-openapi.json` → Schema URL: `https://spec.openapis.org/oas/3.0/schema/2021-09-28`
     - `karaokee-asyncapi.yaml` → Schema URL: `https://asyncapi.com/schema-store/3.0.0.json`
 
 ---
@@ -102,7 +102,7 @@ This project uses an **API-first** workflow. The YAML file is the single source 
 **Our approach:** The contract is defined first in YAML, interfaces are generated from it, and controllers implement those interfaces.
 
 ```
-karaokee-openapi.yaml  (you edit this)
+karaokee-openapi.json  (you edit this)
         ↓  ./gradlew build  (runs automatically)
 *Api.java interfaces  (auto-generated — never edit these)
         ↓  you write this
@@ -115,7 +115,7 @@ karaokee-openapi.yaml  (you edit this)
 
 **Step 1 — Edit the YAML**
 
-Open `src/main/resources/static/karaokee-openapi.yaml` and add or change the endpoint definition.
+Open `src/main/resources/static/karaokee-openapi.json` and add or change the endpoint definition.
 
 **Step 2 — Regenerate the interfaces**
 
