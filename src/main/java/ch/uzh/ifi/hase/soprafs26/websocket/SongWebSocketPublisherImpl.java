@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs26.websocket;
 
-import ch.uzh.ifi.hase.soprafs26.websocket.LyricsPayload;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
