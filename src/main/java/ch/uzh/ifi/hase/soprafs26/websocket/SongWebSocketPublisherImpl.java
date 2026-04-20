@@ -1,6 +1,5 @@
 package ch.uzh.ifi.hase.soprafs26.websocket;
 
-
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -23,6 +22,14 @@ public class SongWebSocketPublisherImpl implements SongWebSocketPublisher {
     @Override
     public void broadcastCurrentSong(Long sessionId, SongGetDTO currentSong) {
         messagingTemplate.convertAndSend("/topic/sessions/" + sessionId + "/currentSong", currentSong);
+    }
+
+    @Override
+    public void broadcastLyrics(Long sessionId, String lyrics) {
+        messagingTemplate.convertAndSend(
+            "/topic/sessions/" + sessionId + "/lyrics",
+            new LyricsPayload(lyrics)
+        );
     }
 }
 
