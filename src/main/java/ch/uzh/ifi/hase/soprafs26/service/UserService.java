@@ -56,8 +56,6 @@ public class UserService {
         User user = userRepository.findByUsername(userInput.getUsername());
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
-            // throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid
-            // credentials");
         }
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         if (!encoder.matches(userInput.getPassword(), user.getPassword())) {

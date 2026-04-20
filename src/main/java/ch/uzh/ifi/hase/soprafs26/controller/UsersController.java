@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class UsersController implements UsersApi {
@@ -59,7 +58,7 @@ public class UsersController implements UsersApi {
         List<SessionGetDTO> dtos = sessionService.getSessionsByUser(userId)
                 .stream()
                 .map(DTOMapper.INSTANCE::convertEntityToSessionGetDTO)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(dtos);
     }

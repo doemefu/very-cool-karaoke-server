@@ -12,10 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class SessionsController implements SessionsApi {
+
+    private static final String TOKEN_HEADER = "token";
 
     private final SessionService sessionService;
     private final UserService userService;
@@ -33,7 +34,7 @@ public class SessionsController implements SessionsApi {
 
     @Override
     public ResponseEntity<SessionGetDTO> sessionsPost(SessionPostDTO sessionPostDTO) {
-        String token = request.getHeader("token");
+        String token = request.getHeader(TOKEN_HEADER);
         User admin = userService.getUserByToken(token);
 
         Session created = sessionService.createSession(
@@ -64,7 +65,7 @@ public class SessionsController implements SessionsApi {
     @Override
     public ResponseEntity<SessionGetDTO> sessionsSessionIdPut(Long sessionId,
                                                               SessionPutDTO sessionPutDTO) {
-        String token = request.getHeader("token");
+        String token = request.getHeader(TOKEN_HEADER);
         User requester = userService.getUserByToken(token);
 
         Session updated = sessionService.updateSessionStatus(
@@ -92,7 +93,7 @@ public class SessionsController implements SessionsApi {
             Long sessionId,
             JoinSessionDTO joinSessionDTO) {
 
-        String token = request.getHeader("token");
+        String token = request.getHeader(TOKEN_HEADER);
         User requester = userService.getUserByToken(token);
 
         Session updated = sessionService.joinSession(
@@ -124,7 +125,7 @@ public class SessionsController implements SessionsApi {
         List<UserGetDTO> dtos = sessionService.getParticipants(sessionId)
                 .stream()
                 .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(dtos);
     }

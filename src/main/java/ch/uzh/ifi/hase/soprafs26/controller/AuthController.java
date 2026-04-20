@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController implements AuthApi {
 
     // TODO: inject AuthService (or UserService) here
-    // AuthController(AuthService authService) { this.authService = authService; }
 
     private final UserService userService;
     private final HttpServletRequest request;

@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
@@ -53,7 +52,7 @@ public class SongService {
         List<CompletableFuture<String>> lyricsFutures = tracks.stream()
                 .map(track -> CompletableFuture.supplyAsync(
                         () -> lyricsService.fetchLyrics(track.artist(), track.title())))
-                .collect(Collectors.toList());
+                .toList();
 
         CompletableFuture.allOf(lyricsFutures.toArray(new CompletableFuture[0])).join();
 
@@ -71,7 +70,7 @@ public class SongService {
             dto.setDurationMs(track.durationMs());
             dto.setLyricsAvailable(lyrics != null);
             return dto;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @Transactional

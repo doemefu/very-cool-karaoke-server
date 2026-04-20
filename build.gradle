@@ -76,6 +76,7 @@ sonar {
         property "sonar.projectKey", "TODO"
         property "sonar.organization", "TODO"
         property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.exclusions", "build/**"
     }
 }
 

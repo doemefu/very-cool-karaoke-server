@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,7 +59,7 @@ class VotingControllerTest {
         body.setSongId(100L);
 
         given(userService.getUserByToken("valid-token")).willReturn(voter);
-        doNothing().when(votingService).castVote(eq(10L), eq(50L), eq(100L), eq(voter));
+        doNothing().when(votingService).castVote(10L, 50L, 100L, voter);
 
         mockMvc.perform(post("/sessions/10/votingRounds/50/votes")
                         .header("token", "valid-token")
@@ -68,7 +67,7 @@ class VotingControllerTest {
                         .content(asJsonString(body)))
                 .andExpect(status().isCreated());
 
-        verify(votingService).castVote(eq(10L), eq(50L), eq(100L), eq(voter));
+        verify(votingService).castVote(10L, 50L, 100L, voter);
     }
 
 
@@ -120,7 +119,7 @@ class VotingControllerTest {
 
         given(userService.getUserByToken("valid-token")).willReturn(voter);
         doThrow(new ResponseStatusException(HttpStatus.GONE, "Voting round is CLOSED"))
-                .when(votingService).castVote(eq(10L), eq(50L), eq(100L), eq(voter));
+                .when(votingService).castVote(10L, 50L, 100L, voter);
 
         mockMvc.perform(post("/sessions/10/votingRounds/50/votes")
                         .header("token", "valid-token")
@@ -139,7 +138,7 @@ class VotingControllerTest {
 
         given(userService.getUserByToken("valid-token")).willReturn(voter);
         doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Not a participant"))
-                .when(votingService).castVote(eq(10L), eq(50L), eq(100L), eq(voter));
+                .when(votingService).castVote(10L, 50L, 100L, voter);
 
         mockMvc.perform(post("/sessions/10/votingRounds/50/votes")
                         .header("token", "valid-token")
@@ -158,7 +157,7 @@ class VotingControllerTest {
 
         given(userService.getUserByToken("valid-token")).willReturn(voter);
         doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Song is not a candidate"))
-                .when(votingService).castVote(eq(10L), eq(50L), eq(100L), eq(voter));
+                .when(votingService).castVote(10L, 50L, 100L, voter);
 
         mockMvc.perform(post("/sessions/10/votingRounds/50/votes")
                         .header("token", "valid-token")
@@ -177,7 +176,7 @@ class VotingControllerTest {
 
         given(userService.getUserByToken("valid-token")).willReturn(voter);
         doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Already voted"))
-                .when(votingService).castVote(eq(10L), eq(50L), eq(100L), eq(voter));
+                .when(votingService).castVote(10L, 50L, 100L, voter);
 
         mockMvc.perform(post("/sessions/10/votingRounds/50/votes")
                         .header("token", "valid-token")
@@ -204,7 +203,7 @@ class VotingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(votingService).getVotingRound(eq(10L), eq(50L));
+        verify(votingService).getVotingRound(10L, 50L);
         verify(votingService).getVoteCounts(mockRound);
     }
 
@@ -220,7 +219,7 @@ class VotingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        verify(votingService).getVotingRound(eq(10L), eq(99L));
+        verify(votingService).getVotingRound(10L, 99L);
         verify(votingService, never()).getVoteCounts(any());
     }
 
@@ -236,7 +235,7 @@ class VotingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        verify(votingService).getVotingRound(eq(99L), eq(50L));
+        verify(votingService).getVotingRound(99L, 50L);
         verify(votingService, never()).getVoteCounts(any());
     }
 

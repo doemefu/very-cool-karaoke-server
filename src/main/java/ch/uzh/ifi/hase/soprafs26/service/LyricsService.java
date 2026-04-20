@@ -31,12 +31,15 @@ public class LyricsService {
     public String fetchLyrics(String artist, String title) {
         try {
             ResponseEntity<JsonNode> response = restTemplate.getForEntity(LYRICS_URL, JsonNode.class, artist, title);
-            return response.getBody().path("lyrics").asText(null);
+            JsonNode body = response.getBody();
+            if (body == null) return null;
+            return body.path("lyrics").textValue();
         }
-        catch (HttpClientErrorException.NotFound | ResourceAccessException e) {
-            if (e instanceof ResourceAccessException) {
-                log.debug("Lyrics request failed for artist='{}', title='{}'", artist, title, e);
-            }
+        catch (HttpClientErrorException.NotFound e) {
+            return null;
+        }
+        catch (ResourceAccessException e) {
+            log.debug("Lyrics request failed for artist='{}', title='{}'", artist, title, e);
             return null;
         }
     }

@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @WebMvcTest(AuthController.class)
-public class AuthControllerTest {
+class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -33,7 +33,7 @@ public class AuthControllerTest {
     private UserService userService;
 
     @Test
-    public void createUser_validInput_userCreated() throws Exception {
+    void createUser_validInput_userCreated() throws Exception {
         // given
         User user = new User();
         user.setId(1L);
@@ -59,7 +59,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    public void loginUser_validCredentials_returnsToken() throws Exception {
+    void loginUser_validCredentials_returnsToken() throws Exception {
         User user = new User();
         user.setId(1L);
         user.setUsername("testUsername");
@@ -81,7 +81,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    public void loginUser_invalidCredentials_returns401() throws Exception {
+    void loginUser_invalidCredentials_returns401() throws Exception {
         given(userService.loginUser(Mockito.any()))
                 .willThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
@@ -96,7 +96,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    public void logoutUser_validToken_returns204() throws Exception {
+    void logoutUser_validToken_returns204() throws Exception {
         Mockito.doNothing().when(userService).logoutUser(Mockito.any());
 
         mockMvc.perform(post("/auth/logout")
@@ -105,7 +105,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    public void logoutUser_invalidToken_returns401() throws Exception {
+    void logoutUser_invalidToken_returns401() throws Exception {
         Mockito.doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token"))
                 .when(userService).logoutUser(Mockito.any());
 

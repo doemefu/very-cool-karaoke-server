@@ -54,7 +54,12 @@ public class SpotifyService {
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 TOKEN_URL, new HttpEntity<>(body, headers), JsonNode.class);
 
-        this.accessToken = response.getBody().path("access_token").asText();
+        JsonNode tokenBody = response.getBody();
+        if (tokenBody == null) {
+            log.warn("Empty response from Spotify token endpoint");
+            return;
+        }
+        this.accessToken = tokenBody.path("access_token").textValue();
         log.info("Spotify access token refreshed");
     }
 
@@ -90,13 +95,15 @@ public class SpotifyService {
         ResponseEntity<JsonNode> response = restTemplate.exchange(
                 SEARCH_URL, HttpMethod.GET, new HttpEntity<>(headers), JsonNode.class, query);
 
+        JsonNode searchBody = response.getBody();
         List<SpotifyTrack> tracks = new ArrayList<>();
-        for (JsonNode item : response.getBody().path("tracks").path("items")) {
+        if (searchBody == null) return tracks;
+        for (JsonNode item : searchBody.path("tracks").path("items")) {
             tracks.add(new SpotifyTrack(
-                    item.path("id").asText(),
-                    item.path("name").asText(),
-                    item.path("artists").get(0).path("name").asText(),
-                    item.path("album").path("images").get(0).path("url").asText(),
+                    item.path("id").textValue(),
+                    item.path("name").textValue(),
+                    item.path("artists").get(0).path("name").textValue(),
+                    item.path("album").path("images").get(0).path("url").textValue(),
                     item.path("duration_ms").asInt()
             ));
         }

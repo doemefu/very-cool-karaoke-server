@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReactionsController implements ReactionsApi {
 
     // TODO: inject ReactionService here
-    // ReactionsController(ReactionService reactionService) { this.reactionService = reactionService; }
 
     // POST /sessions/{sessionId}/reactions — Send a live emoji reaction during a performance (S9)
     // Broadcasts the reaction via WebSocket to /topic/sessions/{sessionId}/reactions

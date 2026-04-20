@@ -21,7 +21,6 @@ import tools.jackson.databind.ObjectMapper;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -66,7 +65,7 @@ class SessionsControllerTest {
         body.setDescription("Fun session");
 
         given(userService.getUserByToken("valid-token")).willReturn(admin);
-        given(sessionService.createSession(eq("Friday Night Karaoke"), eq("Fun session"), eq(admin)))
+        given(sessionService.createSession("Friday Night Karaoke", "Fun session", admin))
                 .willReturn(session);
 
         mockMvc.perform(post("/sessions")

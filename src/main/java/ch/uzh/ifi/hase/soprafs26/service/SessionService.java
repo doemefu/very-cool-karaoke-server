@@ -22,6 +22,9 @@ import java.util.*;
 @Transactional
 public class SessionService {
 
+    private static final String USER_NOT_FOUND = "User not found";
+    private static final String SESSION_NOT_FOUND = "Session not found";
+
     private final Logger log = LoggerFactory.getLogger(SessionService.class);
 
     private final SessionRepository sessionRepository;
@@ -64,13 +67,13 @@ public class SessionService {
     public Session getSessionById(Long sessionId) {
         return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Session not found"));
+                        HttpStatus.NOT_FOUND, SESSION_NOT_FOUND));
     }
 
     public Session getSessionByPin(String gamePin) {
         Session session = sessionRepository.findByGamePin(gamePin);
         if (session == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, SESSION_NOT_FOUND);
         }
         return session;
     }
@@ -122,7 +125,7 @@ public class SessionService {
     public Session joinSession(Long sessionId, String gamePin, Long userId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Session not found"));
+                        HttpStatus.NOT_FOUND, SESSION_NOT_FOUND));
 
         if (!session.getGamePin().equals(gamePin)) {
             throw new ResponseStatusException(
@@ -131,7 +134,7 @@ public class SessionService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
+                        HttpStatus.NOT_FOUND, USER_NOT_FOUND));
 
         boolean isNewParticipant = !session.getParticipants().contains(user);
 
@@ -205,7 +208,7 @@ public class SessionService {
     public Set<User> getParticipants(Long sessionId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Session not found"));
+                        HttpStatus.NOT_FOUND, SESSION_NOT_FOUND));
         return session.getParticipants();
     }
 
@@ -214,7 +217,7 @@ public class SessionService {
     public List<Session> getSessionsByUser(Long userId) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
+                        HttpStatus.NOT_FOUND, USER_NOT_FOUND));
 
         List<Session> created = sessionRepository.findByAdminId(userId);
         List<Session> joined = sessionRepository.findByParticipantId(userId);
@@ -230,7 +233,7 @@ public class SessionService {
         Session session = getSessionById(sessionId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
+                        HttpStatus.NOT_FOUND, USER_NOT_FOUND));
         return session.isPendingInitialSong(user);
     }
 
@@ -238,7 +241,7 @@ public class SessionService {
         Session session = getSessionById(sessionId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
+                        HttpStatus.NOT_FOUND, USER_NOT_FOUND));
         session.removeFromPendingInitialSong(user);
         sessionRepository.save(session);
         log.debug("User {} fulfilled initial song requirement for session {}",
