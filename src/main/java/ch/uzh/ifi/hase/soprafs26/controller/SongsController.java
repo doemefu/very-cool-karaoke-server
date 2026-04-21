@@ -62,7 +62,7 @@ public class SongsController implements SongsApi {
     @Override
     public ResponseEntity<SongGetDTO> sessionsSessionIdSongsSkipPost(Long sessionId) {
         // TODO: verify caller is admin, delegate to songService.skipCurrent(sessionId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
     // DELETE /sessions/{sessionId}/songs/{songId} — Remove a song from the queue, admin only (S7)
@@ -70,7 +70,7 @@ public class SongsController implements SongsApi {
     @Override
     public ResponseEntity<Void> sessionsSessionIdSongsSongIdDelete(Long sessionId, Long songId) {
         // TODO: verify caller is admin, delegate to songService.removeFromQueue(sessionId, songId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
     // PUT /sessions/{sessionId}/songs/{songId}/played — Mark a song as played, admin only
@@ -78,6 +78,6 @@ public class SongsController implements SongsApi {
     @Override
     public ResponseEntity<SongGetDTO> sessionsSessionIdSongsSongIdPlayedPut(Long sessionId, Long songId) {
         // TODO: verify caller is admin, delegate to songService.markAsPlayed(sessionId, songId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 }

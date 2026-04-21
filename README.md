@@ -28,7 +28,7 @@ Start the server locally, then open:
 
 | Tool | URL | Covers |
 |---|---|---|
-| Swagger UI | http://localhost:8080/swagger-ui.html | All REST endpoints (from YAML) |
+| Swagger UI | http://localhost:8080/swagger-ui.html | All REST endpoints (from JSON) |
 | Springwolf | http://localhost:8080/springwolf/asyncapi-ui.html | All WebSocket/STOMP events |
 
 Swagger UI renders directly from `karaokee-openapi.json`, so it always shows **all endpoints** — including ones not yet implemented. Unimplemented endpoints return `501 Not Implemented` until overridden in a controller.
@@ -93,7 +93,7 @@ To get autocompletion and validation for both spec files in IntelliJ:
 
 ## How We Develop Endpoints (YAML-first)
 
-This project uses an **API-first** workflow. The YAML file is the single source of truth for all REST endpoints — not the Java code.
+This project uses an **API-first** workflow. The JSON file is the single source of truth for all REST endpoints — not the Java code.
 
 ### How it differs from the classic Spring approach
 

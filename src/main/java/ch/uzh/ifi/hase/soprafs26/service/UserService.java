@@ -76,6 +76,9 @@ public class UserService {
     }
 
     public void changePassword(Long userId, String token, String currentPassword, String newPassword) {
+        if (currentPassword == null || currentPassword.isBlank() || newPassword == null || newPassword.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords must not be blank");
+        }
         User user = getUserByToken(token);
 
         if (!user.getId().equals(userId)) {
