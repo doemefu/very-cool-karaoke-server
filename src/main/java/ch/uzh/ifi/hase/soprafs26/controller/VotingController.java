@@ -34,7 +34,7 @@ public class VotingController implements VotingApi {
     @Override
     public ResponseEntity<List<VotingRoundGetDTO>> sessionsSessionIdVotingRoundsGet(Long sessionId) {
         // TODO: delegate to votingService.getRounds(sessionId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
     // GET /sessions/{sessionId}/votingRounds/{roundId} — Get a specific voting round (S14)
