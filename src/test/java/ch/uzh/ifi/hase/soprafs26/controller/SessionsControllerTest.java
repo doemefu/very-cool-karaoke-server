@@ -205,6 +205,8 @@ class SessionsControllerTest {
 
     @Test
     void sessionsSessionIdParticipantsUserIdDelete_validRequest_returns204() throws Exception {
+        given(userService.getUserByToken("valid-token")).willReturn(admin);
+
         mockMvc.perform(delete("/sessions/10/participants/1")
                         .header("token", "valid-token"))
                 .andExpect(status().isNoContent());
