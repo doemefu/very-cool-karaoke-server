@@ -117,15 +117,14 @@ public class SongService {
     }
 
     @Transactional(readOnly = true)
-    public SongGetDTO getCurrentSong(Long sessionId) {
+    public Optional<SongGetDTO> getCurrentSong(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
         Map<Long, Long> emptyVotes = Collections.emptyMap();
 
         return session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .findFirst()
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
-                .orElse(null); // null = no song playing → controller returns 204
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes));
     }
 
     @Transactional(readOnly = true)
