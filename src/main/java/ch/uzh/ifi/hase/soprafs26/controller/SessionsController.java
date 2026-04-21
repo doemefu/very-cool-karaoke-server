@@ -8,8 +8,10 @@ import ch.uzh.ifi.hase.soprafs26.service.SessionService;
 import ch.uzh.ifi.hase.soprafs26.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -143,6 +145,11 @@ public class SessionsController implements SessionsApi {
     @Override
     public ResponseEntity<Void> sessionsSessionIdParticipantsUserIdDelete(Long sessionId,
                                                                           Long userId) {
+        String token = request.getHeader(TOKEN_HEADER);
+        User requester = userService.getUserByToken(token);
+        if (!requester.getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only remove yourself from a session");
+        }
         sessionService.leaveSession(sessionId, userId);
         return ResponseEntity.noContent().build();
     }
