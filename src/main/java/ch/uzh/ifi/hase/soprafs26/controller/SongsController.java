@@ -34,8 +34,7 @@ public class SongsController implements SongsApi {
     // Returns 200 + list of SongGetDTO
     @Override
     public ResponseEntity<List<SongGetDTO>> sessionsSessionIdSongsGet(Long sessionId) {
-        // TODO: delegate to songService.getQueue(sessionId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        return ResponseEntity.ok(songService.getQueue(sessionId));
     }
 
     // POST /sessions/{sessionId}/songs — Add a song to the queue (S6, S10)
@@ -50,8 +49,11 @@ public class SongsController implements SongsApi {
     // Returns 200 + SongGetDTO, 204 if nothing is playing, 404 if session not found
     @Override
     public ResponseEntity<SongGetDTO> sessionsSessionIdSongsCurrentGet(Long sessionId) {
-        // TODO: delegate to songService.getCurrentSong(sessionId)
-        throw new UnsupportedOperationException("Not implemented yet");
+        SongGetDTO current = songService.getCurrentSong(sessionId);
+        if (current == null) {
+            return ResponseEntity.noContent().build(); 
+        }
+        return ResponseEntity.ok(current);
     }
 
     // POST /sessions/{sessionId}/songs/skip — Skip current song, admin only (S7)

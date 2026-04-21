@@ -115,4 +115,26 @@ public class SongService {
     void cacheLyrics(String spotifyId, String lyrics) {
         lyricsCache.put(spotifyId, Optional.ofNullable(lyrics));
     }
+
+    @Transactional(readOnly = true)
+    public SongGetDTO getCurrentSong(Long sessionId) {
+        Session session = sessionService.getSessionById(sessionId);
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        return session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .orElse(null); // null = no song playing → controller returns 204
+    }
+
+    @Transactional(readOnly = true)
+    public List<SongGetDTO> getQueue(Long sessionId) {
+        Session session = sessionService.getSessionById(sessionId);
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        return session.getPlaylist().stream()
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
+    }
 }
