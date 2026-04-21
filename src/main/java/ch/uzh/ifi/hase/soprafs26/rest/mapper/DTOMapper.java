@@ -1,11 +1,22 @@
 package ch.uzh.ifi.hase.soprafs26.rest.mapper;
 
-import org.mapstruct.*;
+import ch.uzh.ifi.hase.soprafs26.entity.Session;
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
+import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.*;
+import org.mapstruct.Context;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
-import ch.uzh.ifi.hase.soprafs26.entity.User;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.UserGetDTO;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.UserPostDTO;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * DTOMapper
@@ -21,15 +32,49 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.UserPostDTO;
 @Mapper
 public interface DTOMapper {
 
-	DTOMapper INSTANCE = Mappers.getMapper(DTOMapper.class);
+    DTOMapper INSTANCE = Mappers.getMapper(DTOMapper.class);
 
-	@Mapping(source = "name", target = "name")
-	@Mapping(source = "username", target = "username")
-	User convertUserPostDTOtoEntity(UserPostDTO userPostDTO);
+    @Mapping(source = "username", target = "username")
+    @Mapping(source = "password", target = "password")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "token", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    User convertUserPostDTOtoEntity(UserPostDTO userPostDTO);
 
-	@Mapping(source = "id", target = "id")
-	@Mapping(source = "name", target = "name")
-	@Mapping(source = "username", target = "username")
-	@Mapping(source = "status", target = "status")
-	UserGetDTO convertEntityToUserGetDTO(User user);
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "username", target = "username")
+    @Mapping(source = "createdAt", target = "createdAt")
+    UserGetDTO convertEntityToUserGetDTO(User user);
+
+    @Mapping(source = "admin", target = "admin")
+    @Mapping(source = "participants", target = "participants")
+    @Mapping(source = "createdAt", target = "createdAt")
+    SessionGetDTO convertEntityToSessionGetDTO(Session session);
+
+    default OffsetDateTime map(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+        return localDateTime.atOffset(ZoneOffset.UTC);
+    }
+
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "username", target = "username")
+    @Mapping(source = "createdAt", target = "createdAt")
+    @Mapping(source = "token", target = "token")
+    UserTokenDTO convertEntityToUserTokenDTO(User user);
+
+    @Mapping(target = "candidates", source = "candidates", qualifiedByName = "sortedByVotes")
+    VotingRoundGetDTO toVotingRoundGetDTO(VotingRound round, @Context Map<Long, Long> counts);
+
+    @Mapping(target = "currentVoteCount", expression = "java(counts.getOrDefault(song.getId(), 0L).intValue())")
+    SongGetDTO toSongGetDTO(Song song, @Context Map<Long, Long> counts);
+
+    @Named("sortedByVotes")
+    default List<SongGetDTO> sortedByVotes(List<Song> songs, @Context Map<Long, Long> counts) {
+        return songs.stream()
+                .map(s -> toSongGetDTO(s, counts))
+                .sorted(Comparator.comparingInt(SongGetDTO::getCurrentVoteCount).reversed())
+                .toList();
+    }
 }

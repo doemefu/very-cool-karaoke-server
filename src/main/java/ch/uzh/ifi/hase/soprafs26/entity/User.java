@@ -1,80 +1,97 @@
 package ch.uzh.ifi.hase.soprafs26.entity;
 
 import jakarta.persistence.*;
-
-import ch.uzh.ifi.hase.soprafs26.constant.UserStatus;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.util.Objects;
 
-/**
- * Internal User Representation
- * This class composes the internal representation of the user and defines how
- * the user is stored in the database.
- * Every variable will be mapped into a database field with the @Column
- * annotation
- * - nullable = false -> this cannot be left empty
- * - unique = true -> this value must be unqiue across the database -> composes
- * the primary key
- */
+
 @Entity
 @Table(name = "users")
 public class User implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue
+    private Long id;
 
-	@Id
-	@GeneratedValue
-	private Long id;
+    @Column(nullable = false, unique = true)
+    private String username;
 
-	@Column(nullable = false)
-	private String name;
+    @Column(nullable = false)
+    private String password;
 
-	@Column(nullable = false, unique = true)
-	private String username;
+    @Column(nullable = false, unique = true)
+    private String token;
 
-	@Column(nullable = false, unique = true)
-	private String token;
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDate createdAt;
 
-	@Column(nullable = false)
-	private UserStatus status;
 
-	public Long getId() {
-		return id;
-	}
+    // equals / hashCode on id 
+    // required for Set<User> (used in Session.participants) to correctly 
+    // identify duplicates and make addParticipant() idempotent.
+    // two User objects with the same database id are the same participant.
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User other)) return false;
+        // compare by id. Returns false for transient entities (id == null)
+        // so they don't accidentally collide before being persisted.
+        return id != null && Objects.equals(id, other.id);
+    }
 
-	public String getName() {
-		return name;
-	}
+    @Override
+    public int hashCode() {
+        // a fixed constant for transient entities (id == null) ensures they
+        // can safely live in a HashSet before being saved. Once persisted,
+        // id is stable and Objects.hash(id) is consistent across calls.
+        return id == null ? 31 : Objects.hash(id);
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
 
-	public String getUsername() {
-		return username;
-	}
+    // getters and setters
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public String getToken() {
-		return token;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setToken(String token) {
-		this.token = token;
-	}
+    public String getUsername() {
+        return username;
+    }
 
-	public UserStatus getStatus() {
-		return status;
-	}
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-	public void setStatus(UserStatus status) {
-		this.status = status;
-	}
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public LocalDate getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDate createdAt) {
+        this.createdAt = createdAt;
+    }
 }

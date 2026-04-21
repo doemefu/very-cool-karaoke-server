@@ -1,0 +1,84 @@
+package ch.uzh.ifi.hase.soprafs26.controller;
+
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
+import ch.uzh.ifi.hase.soprafs26.service.SongService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+public class SongsController implements SongsApi {
+
+    private final SongService songService;
+
+    SongsController(SongService songService) {
+        this.songService = songService;
+    }
+
+    // GET /songs/search?query= — Search songs via Spotify Web API (S11)
+    // Returns 200 + list of SongSearchResultDTO, 400 if query is blank
+    @Override
+    public ResponseEntity<List<SongSearchResultDTO>> songsSearchGet(String query) {
+        if (query.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Query must not be blank");
+        }
+        return ResponseEntity.ok(songService.search(query));
+    }
+
+    // GET /sessions/{sessionId}/songs — Get the ordered song queue
+    // Returns 200 + list of SongGetDTO
+    @Override
+    public ResponseEntity<List<SongGetDTO>> sessionsSessionIdSongsGet(Long sessionId) {
+        return ResponseEntity.ok(songService.getQueue(sessionId));
+    }
+
+    // POST /sessions/{sessionId}/songs — Add a song to the queue (S6, S10)
+    // Returns 201 + SongGetDTO, 404 if session not found
+    @Override
+    public ResponseEntity<SongGetDTO> sessionsSessionIdSongsPost(Long sessionId, SongPostDTO songPostDTO) {
+        SongGetDTO result = songService.addToQueue(sessionId, songPostDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    // GET /sessions/{sessionId}/songs/current — Get the currently playing song with lyrics (S8)
+    // Returns 200 + SongGetDTO, 204 if nothing is playing, 404 if session not found
+    @Override
+    public ResponseEntity<SongGetDTO> sessionsSessionIdSongsCurrentGet(Long sessionId) {
+        Optional<SongGetDTO> current = songService.getCurrentSong(sessionId);
+        if (current.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(current.get());
+    }
+
+    // POST /sessions/{sessionId}/songs/skip — Skip current song, admin only (S7)
+    // Also triggers WebSocket broadcasts for currentSong and votingRound topics
+    // Returns 200 + next SongGetDTO, 403 if not admin, 404 if session not found
+    @Override
+    public ResponseEntity<SongGetDTO> sessionsSessionIdSongsSkipPost(Long sessionId) {
+        // TODO: verify caller is admin, delegate to songService.skipCurrent(sessionId)
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    }
+
+    // DELETE /sessions/{sessionId}/songs/{songId} — Remove a song from the queue, admin only (S7)
+    // Returns 204 on success, 403 if not admin, 404 if session or song not found
+    @Override
+    public ResponseEntity<Void> sessionsSessionIdSongsSongIdDelete(Long sessionId, Long songId) {
+        // TODO: verify caller is admin, delegate to songService.removeFromQueue(sessionId, songId)
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    }
+
+    // PUT /sessions/{sessionId}/songs/{songId}/played — Mark a song as played, admin only
+    // Returns 200 + updated SongGetDTO, 403 if not admin, 404 if session or song not found
+    @Override
+    public ResponseEntity<SongGetDTO> sessionsSessionIdSongsSongIdPlayedPut(Long sessionId, Long songId) {
+        // TODO: verify caller is admin, delegate to songService.markAsPlayed(sessionId, songId)
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    }
+}

@@ -44,3 +44,6 @@ local.properties
 .xcode*
 
 /bin
+/.claude/
+/docs/
+/htmlReport/

@@ -5,7 +5,7 @@ plugins {
     id 'idea'
     id 'jacoco'
     id "org.sonarqube" version "7.2.1.6560"
-    id "org.springdoc.openapi-gradle-plugin" version "1.9.0"
+    id "org.openapi.generator" version "7.7.0"
 }
 
 group = 'ch.uzh.ifi.hasel'
@@ -37,7 +37,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
     testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     // Provides the documentation API
@@ -51,6 +55,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-json'
     implementation 'org.springframework.boot:spring-boot-h2console'
+
+    implementation 'org.springframework.security:spring-security-crypto'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.h2database:h2'
@@ -70,14 +76,37 @@ sonar {
         property "sonar.projectKey", System.getenv("SONAR_PROJECT_KEY")
         property "sonar.organization", System.getenv("SONAR_ORGANIZATION")
         property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.exclusions", "build/**"
     }
 }
 
-openApi {
-    apiDocsUrl = "http://localhost:8080/v3/api-docs"
-    outputDir = file("$buildDir/docs")
-    outputFileName = "karaokee-openapi.yaml"
+openApiGenerate {
+    generatorName = "spring"
+    inputSpec = "$rootDir/src/main/resources/static/karaokee-openapi.json"
+    outputDir = "$buildDir/generated"
+    apiPackage = "ch.uzh.ifi.hase.soprafs26.controller"
+    modelPackage = "ch.uzh.ifi.hase.soprafs26.rest.dto"
+    globalProperties = [
+        apis           : "",
+        supportingFiles: ""
+    ]
+    configOptions = [
+        useSpringBoot3  : "true",
+        interfaceOnly   : "true",
+        useTags         : "true",
+        openApiNullable : "false"
+    ]
 }
+
+sourceSets {
+    main {
+        java {
+            srcDir "$buildDir/generated/src/main/java"
+        }
+    }
+}
+
+compileJava.dependsOn tasks.openApiGenerate
 
 jacocoTestReport {
     reports {
