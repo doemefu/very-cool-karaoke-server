@@ -54,7 +54,7 @@ class SpotifyServiceTest {
                       "id": "track123",
                       "name": "Dancing Queen",
                       "artists": [{"name": "ABBA"}],
-                      "album": {"images": [{"url": "http://img.test/art.jpg"}]},
+                      "album": {"name": "ABBA Gold", "images": [{"url": "http://img.test/art.jpg"}]},
                       "duration_ms": 230000
                     }]
                   }
@@ -72,6 +72,7 @@ class SpotifyServiceTest {
         assertEquals("track123", track.spotifyId());
         assertEquals("Dancing Queen", track.title());
         assertEquals("ABBA", track.artist());
+        assertEquals("ABBA Gold", track.albumName());
         assertEquals("http://img.test/art.jpg", track.albumArt());
         assertEquals(230000, track.durationMs());
     }

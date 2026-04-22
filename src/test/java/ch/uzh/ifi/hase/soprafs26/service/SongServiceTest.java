@@ -49,7 +49,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsAvailable_setsLyricsAvailableTrue() {
-        SpotifyTrack track = new SpotifyTrack("id1", "Dancing Queen", "ABBA", "http://img/art.jpg", 230000);
+        SpotifyTrack track = new SpotifyTrack("id1", "Dancing Queen", "ABBA", "ABBA Gold", "http://img/art.jpg", 230000);
         when(spotifyService.search("ABBA")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("ABBA", "Dancing Queen")).thenReturn("Here I go again...");
 
@@ -67,7 +67,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsNotFound_setsLyricsAvailableFalse() {
-        SpotifyTrack track = new SpotifyTrack("id2", "Mystery Song", "Unknown", "http://img/art.jpg", 180000);
+        SpotifyTrack track = new SpotifyTrack("id2", "Mystery Song", "Unknown", null, "http://img/art.jpg", 180000);
         when(spotifyService.search("Mystery")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("Unknown", "Mystery Song")).thenReturn(null);
 
@@ -79,7 +79,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsAreCachedBySpotifyId() {
-        SpotifyTrack track = new SpotifyTrack("id3", "Waterloo", "ABBA", "http://img/art.jpg", 170000);
+        SpotifyTrack track = new SpotifyTrack("id3", "Waterloo", "ABBA", "Waterloo", "http://img/art.jpg", 170000);
         when(spotifyService.search("Waterloo")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("ABBA", "Waterloo")).thenReturn("My my, at Waterloo Napoleon did surrender");
 
@@ -90,7 +90,7 @@ class SongServiceTest {
 
     @Test
     void search_noLyrics_cachedAsNull() {
-        SpotifyTrack track = new SpotifyTrack("id4", "Unknown Song", "Unknown", "http://img/art.jpg", 200000);
+        SpotifyTrack track = new SpotifyTrack("id4", "Unknown Song", "Unknown", null, "http://img/art.jpg", 200000);
         when(spotifyService.search("Unknown")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("Unknown", "Unknown Song")).thenReturn(null);
 
@@ -102,8 +102,7 @@ class SongServiceTest {
     @Test
     void addToQueue_persistsSongAndBroadcastsQueue() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA");
-        dto.setDurationMs(230000);
+        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA", 230000);
 
         // Pre-populate lyrics cache
         songService.cacheLyrics("track123", "Here I go again...");
@@ -127,8 +126,7 @@ class SongServiceTest {
     @Test
     void addToQueue_noLyricsCache_persistsSongWithNullLyrics() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown");
-        dto.setDurationMs(180000);
+        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown", 180000);
 
         when(sessionService.getSessionById(2L)).thenReturn(session);
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -137,6 +135,39 @@ class SongServiceTest {
 
         assertNull(result.getLyrics());
         verify(songWebSocketPublisher).broadcastQueue(eq(2L), anyList());
+    }
+
+    @Test
+    void getQueue_excludesPerformedSongs() {
+        Session session = new Session();
+
+        Song performed = new Song();
+        performed.setId(1L);
+        performed.setSpotifyId("s1");
+        performed.setTitle("Done");
+        performed.setArtist("A");
+        performed.setDurationMs(100);
+        performed.setPerformed(true);
+        performed.setSession(session);
+
+        Song unperformed = new Song();
+        unperformed.setId(2L);
+        unperformed.setSpotifyId("s2");
+        unperformed.setTitle("Next");
+        unperformed.setArtist("B");
+        unperformed.setDurationMs(200);
+        unperformed.setPerformed(false);
+        unperformed.setSession(session);
+
+        session.getPlaylist().add(performed);
+        session.getPlaylist().add(unperformed);
+
+        when(sessionService.getSessionById(99L)).thenReturn(session);
+
+        List<SongGetDTO> queue = songService.getQueue(99L);
+
+        assertEquals(1, queue.size());
+        assertEquals("Next", queue.get(0).getTitle());
     }
 
     @Test
