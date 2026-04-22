@@ -93,6 +93,7 @@ public class SongService {
 
         // Broadcast updated queue (no votes yet → empty counts map)
         List<SongGetDTO> queue = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);
@@ -133,7 +134,39 @@ public class SongService {
         Map<Long, Long> emptyVotes = Collections.emptyMap();
 
         return session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
+    }
+
+    @Transactional
+    public void nextSong(Long sessionId) {
+        Session session = sessionService.getSessionById(sessionId);
+        List<Song> playlist = session.getPlaylist();
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        // Mark the current song (first unperformed) as performed
+        playlist.stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .ifPresent(s -> {
+                    s.markPerformed();
+                    songRepository.save(s);
+                });
+
+        // Find the next unperformed song
+        SongGetDTO next = playlist.stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .orElse(null);
+
+        // Broadcast new current song (null if queue exhausted) and updated queue
+        List<SongGetDTO> updatedQueue = playlist.stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
+        songWebSocketPublisher.broadcastCurrentSong(sessionId, next);
+        songWebSocketPublisher.broadcastQueue(sessionId, updatedQueue);
     }
 }
