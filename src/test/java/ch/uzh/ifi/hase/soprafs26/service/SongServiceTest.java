@@ -140,6 +140,39 @@ class SongServiceTest {
     }
 
     @Test
+    void getQueue_excludesPerformedSongs() {
+        Session session = new Session();
+
+        Song performed = new Song();
+        performed.setId(1L);
+        performed.setSpotifyId("s1");
+        performed.setTitle("Done");
+        performed.setArtist("A");
+        performed.setDurationMs(100);
+        performed.setPerformed(true);
+        performed.setSession(session);
+
+        Song unperformed = new Song();
+        unperformed.setId(2L);
+        unperformed.setSpotifyId("s2");
+        unperformed.setTitle("Next");
+        unperformed.setArtist("B");
+        unperformed.setDurationMs(200);
+        unperformed.setPerformed(false);
+        unperformed.setSession(session);
+
+        session.getPlaylist().add(performed);
+        session.getPlaylist().add(unperformed);
+
+        when(sessionService.getSessionById(99L)).thenReturn(session);
+
+        List<SongGetDTO> queue = songService.getQueue(99L);
+
+        assertEquals(1, queue.size());
+        assertEquals("Next", queue.get(0).getTitle());
+    }
+
+    @Test
     void nextSong_advancesToNextUnperformedSong() {
         Session session = new Session();
 

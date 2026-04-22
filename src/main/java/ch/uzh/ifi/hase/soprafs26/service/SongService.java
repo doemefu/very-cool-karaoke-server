@@ -148,7 +148,6 @@ public class SongService {
         List<Song> playlist = session.getPlaylist();
         Map<Long, Long> emptyVotes = Collections.emptyMap();
 
-        // Mark the current song (first unperformed) as performed
         playlist.stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .findFirst()
@@ -157,18 +156,12 @@ public class SongService {
                     songRepository.save(s);
                 });
 
-        // Find the next unperformed song
-        SongGetDTO next = playlist.stream()
-                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
-                .findFirst()
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
-                .orElse(null);
-
-        // Broadcast new current song (null if queue exhausted) and updated queue
         List<SongGetDTO> updatedQueue = playlist.stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
+
+        SongGetDTO next = updatedQueue.isEmpty() ? null : updatedQueue.get(0);
         songWebSocketPublisher.broadcastCurrentSong(sessionId, next);
         songWebSocketPublisher.broadcastQueue(sessionId, updatedQueue);
     }

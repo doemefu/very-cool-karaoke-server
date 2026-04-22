@@ -6,9 +6,6 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.service.SongService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -71,10 +68,10 @@ public class SongsController implements SongsApi {
 
     // POST /sessions/{sessionId}/songs/next — advance to next song when current ends
     // Marks the current song as performed, broadcasts next currentSong + queue
-    @PostMapping("/sessions/{sessionId}/songs/next")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void sessionsSessionIdSongsNextPost(@PathVariable Long sessionId) {
+    @Override
+    public ResponseEntity<Void> sessionsSessionIdSongsNextPost(Long sessionId) {
         songService.nextSong(sessionId);
+        return ResponseEntity.noContent().build();
     }
 
     // DELETE /sessions/{sessionId}/songs/{songId} — Remove a song from the queue, admin only (S7)
@@ -85,10 +82,9 @@ public class SongsController implements SongsApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
-    // PUT /sessions/{sessionId}/songs/{songId}/played — Mark a song as played, admin only
-    // Stubbed as no-op 204 (advancement is now handled by POST /songs/next)
+    // PUT /sessions/{sessionId}/songs/{songId}/played — no-op stub (advancement via POST /songs/next)
     @Override
-    public ResponseEntity<SongGetDTO> sessionsSessionIdSongsSongIdPlayedPut(Long sessionId, Long songId) {
+    public ResponseEntity<Void> sessionsSessionIdSongsSongIdPlayedPut(Long sessionId, Long songId) {
         return ResponseEntity.noContent().build();
     }
 }
