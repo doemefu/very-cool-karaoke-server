@@ -49,7 +49,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsAvailable_setsLyricsAvailableTrue() {
-        SpotifyTrack track = new SpotifyTrack("id1", "Dancing Queen", "ABBA", "http://img/art.jpg", 230000);
+        SpotifyTrack track = new SpotifyTrack("id1", "Dancing Queen", "ABBA", "ABBA Gold", "http://img/art.jpg", 230000);
         when(spotifyService.search("ABBA")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("ABBA", "Dancing Queen")).thenReturn("Here I go again...");
 
@@ -67,7 +67,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsNotFound_setsLyricsAvailableFalse() {
-        SpotifyTrack track = new SpotifyTrack("id2", "Mystery Song", "Unknown", "http://img/art.jpg", 180000);
+        SpotifyTrack track = new SpotifyTrack("id2", "Mystery Song", "Unknown", null, "http://img/art.jpg", 180000);
         when(spotifyService.search("Mystery")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("Unknown", "Mystery Song")).thenReturn(null);
 
@@ -79,7 +79,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsAreCachedBySpotifyId() {
-        SpotifyTrack track = new SpotifyTrack("id3", "Waterloo", "ABBA", "http://img/art.jpg", 170000);
+        SpotifyTrack track = new SpotifyTrack("id3", "Waterloo", "ABBA", "Waterloo", "http://img/art.jpg", 170000);
         when(spotifyService.search("Waterloo")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("ABBA", "Waterloo")).thenReturn("My my, at Waterloo Napoleon did surrender");
 
@@ -90,7 +90,7 @@ class SongServiceTest {
 
     @Test
     void search_noLyrics_cachedAsNull() {
-        SpotifyTrack track = new SpotifyTrack("id4", "Unknown Song", "Unknown", "http://img/art.jpg", 200000);
+        SpotifyTrack track = new SpotifyTrack("id4", "Unknown Song", "Unknown", null, "http://img/art.jpg", 200000);
         when(spotifyService.search("Unknown")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("Unknown", "Unknown Song")).thenReturn(null);
 
@@ -102,7 +102,7 @@ class SongServiceTest {
     @Test
     void addToQueue_persistsSongAndBroadcastsQueue() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA");
+        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA", null);
         dto.setDurationMs(230000);
 
         // Pre-populate lyrics cache
@@ -127,7 +127,7 @@ class SongServiceTest {
     @Test
     void addToQueue_noLyricsCache_persistsSongWithNullLyrics() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown");
+        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown", null);
         dto.setDurationMs(180000);
 
         when(sessionService.getSessionById(2L)).thenReturn(session);

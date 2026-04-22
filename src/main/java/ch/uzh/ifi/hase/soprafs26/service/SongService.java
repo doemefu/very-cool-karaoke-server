@@ -66,8 +66,10 @@ public class SongService {
             dto.setSpotifyId(track.spotifyId());
             dto.setTitle(track.title());
             dto.setArtist(track.artist());
+            dto.setAlbumName(track.albumName());
             dto.setAlbumArt(track.albumArt());
             dto.setDurationMs(track.durationMs());
+            dto.setDurationSeconds(track.durationMs() / 1000);
             dto.setLyricsAvailable(lyrics != null);
             return dto;
         }).toList();
@@ -81,6 +83,7 @@ public class SongService {
         song.setSpotifyId(dto.getSpotifyId());
         song.setTitle(dto.getTitle());
         song.setArtist(dto.getArtist());
+        song.setAlbumName(dto.getAlbumName());
         song.setAlbumArt(dto.getAlbumArt());
         song.setDurationMs(dto.getDurationMs());
         song.setLyrics(getCachedLyrics(dto.getSpotifyId())); // nullable

@@ -1067,9 +1067,17 @@
             "type" : "string",
             "nullable" : true
           },
+          "albumName" : {
+            "type" : "string",
+            "nullable" : true
+          },
           "durationMs" : {
             "type" : "integer",
             "example" : 354000
+          },
+          "durationSeconds" : {
+            "type" : "integer",
+            "nullable" : true
           }
         }
       },
@@ -1090,6 +1098,21 @@
           "artist" : {
             "type" : "string"
           },
+          "albumArt" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "albumName" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "durationMs" : {
+            "type" : "integer"
+          },
+          "durationSeconds" : {
+            "type" : "integer",
+            "nullable" : true
+          },
           "lyrics" : {
             "type" : "string",
             "nullable" : true
@@ -1102,13 +1125,6 @@
           },
           "addedBy" : {
             "$ref" : "#/components/schemas/UserGetDTO"
-          },
-          "albumArt" : {
-            "type" : "string",
-            "nullable" : true
-          },
-          "durationMs" : {
-            "type" : "integer"
           }
         }
       },
@@ -1125,15 +1141,23 @@
           "artist" : {
             "type" : "string"
           },
-          "lyricsAvailable" : {
-            "type" : "boolean"
-          },
           "albumArt" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "albumName" : {
             "type" : "string",
             "nullable" : true
           },
           "durationMs" : {
             "type" : "integer"
+          },
+          "durationSeconds" : {
+            "type" : "integer",
+            "nullable" : true
+          },
+          "lyricsAvailable" : {
+            "type" : "boolean"
           }
         }
       },

@@ -22,7 +22,11 @@ public class SongPostDTO {
 
     private String albumArt = null;
 
+    private String albumName = null;
+
     private Integer durationMs;
+
+    private Integer durationSeconds;
 
     public SongPostDTO() {
         super();
@@ -31,10 +35,11 @@ public class SongPostDTO {
     /**
      * Constructor with only required parameters
      */
-    public SongPostDTO(String spotifyId, String title, String artist) {
+    public SongPostDTO(String spotifyId, String title, String artist, String albumName) {
         this.spotifyId = spotifyId;
         this.title = title;
         this.artist = artist;
+        this.albumName = albumName;
     }
 
     public SongPostDTO spotifyId(String spotifyId) {
@@ -111,6 +116,21 @@ public class SongPostDTO {
         this.albumArt = albumArt;
     }
 
+    public SongPostDTO albumName(String albumName) {
+        this.albumName = albumName;
+        return this;
+    }
+
+    @Schema(name = "albumName", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("albumName")
+    public String getAlbumName() {
+        return albumName;
+    }
+
+    public void setAlbumName(String albumName) {
+        this.albumName = albumName;
+    }
+
     @NotNull
     @Schema(name = "durationMs", requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonProperty("durationMs")
@@ -120,6 +140,21 @@ public class SongPostDTO {
 
     public void setDurationMs(Integer durationMs) {
         this.durationMs = durationMs;
+    }
+
+    public SongPostDTO durationSeconds(Integer durationSeconds) {
+        this.durationSeconds = durationSeconds;
+        return this;
+    }
+
+    @Schema(name = "durationSeconds", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("durationSeconds")
+    public Integer getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(Integer durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 
     @Override
@@ -135,12 +170,14 @@ public class SongPostDTO {
                 Objects.equals(this.title, songPostDTO.title) &&
                 Objects.equals(this.artist, songPostDTO.artist) &&
                 Objects.equals(this.albumArt, songPostDTO.albumArt) &&
-                Objects.equals(this.durationMs, songPostDTO.durationMs);
+                Objects.equals(this.albumName, songPostDTO.albumName) &&
+                Objects.equals(this.durationMs, songPostDTO.durationMs) &&
+                Objects.equals(this.durationSeconds, songPostDTO.durationSeconds);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(spotifyId, title, artist, albumArt, durationMs);
+        return Objects.hash(spotifyId, title, artist, albumArt, albumName, durationMs, durationSeconds);
     }
 
     @Override
@@ -150,7 +187,9 @@ public class SongPostDTO {
                 "    title: " + toIndentedString(title) + "\n" +
                 "    artist: " + toIndentedString(artist) + "\n" +
                 "    albumArt: " + toIndentedString(albumArt) + "\n" +
+                "    albumName: " + toIndentedString(albumName) + "\n" +
                 "    durationMs: " + toIndentedString(durationMs) + "\n" +
+                "    durationSeconds: " + toIndentedString(durationSeconds) + "\n" +
                 "}";
         return sb;
     }

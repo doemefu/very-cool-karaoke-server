@@ -19,9 +19,13 @@ public class SongSearchResultDTO {
 
     private String artist;
 
+    private String albumName;
+
     private String albumArt = null;
 
     private Integer durationMs;
+
+    private Integer durationSeconds;
 
     private Boolean lyricsAvailable;
 
@@ -103,6 +107,16 @@ public class SongSearchResultDTO {
         this.albumArt = albumArt;
     }
 
+    @Schema(name = "albumName", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("albumName")
+    public String getAlbumName() {
+        return albumName;
+    }
+
+    public void setAlbumName (String albumName) {
+        this.albumName = albumName;
+    }
+
     public SongSearchResultDTO durationMs(Integer durationMs) {
         this.durationMs = durationMs;
         return this;
@@ -116,6 +130,21 @@ public class SongSearchResultDTO {
 
     public void setDurationMs(Integer durationMs) {
         this.durationMs = durationMs;
+    }
+
+    public SongSearchResultDTO durationSeconds(Integer durationSeconds) {
+        this.durationSeconds = durationSeconds;
+        return this;
+    }
+
+    @Schema(name = "durationSeconds", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("durationSeconds")
+    public Integer getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(Integer durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 
     public SongSearchResultDTO lyricsAvailable(Boolean lyricsAvailable) {
@@ -152,13 +181,15 @@ public class SongSearchResultDTO {
                 Objects.equals(this.title, songSearchResultDTO.title) &&
                 Objects.equals(this.artist, songSearchResultDTO.artist) &&
                 Objects.equals(this.albumArt, songSearchResultDTO.albumArt) &&
+                Objects.equals(this.albumName, songSearchResultDTO.albumName) &&
                 Objects.equals(this.durationMs, songSearchResultDTO.durationMs) &&
+                Objects.equals(this.durationSeconds, songSearchResultDTO.durationSeconds) &&
                 Objects.equals(this.lyricsAvailable, songSearchResultDTO.lyricsAvailable);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(spotifyId, title, artist, albumArt, durationMs, lyricsAvailable);
+        return Objects.hash(spotifyId, title, artist, albumArt, albumName, durationMs, durationSeconds, lyricsAvailable);
     }
 
     @Override
@@ -167,8 +198,10 @@ public class SongSearchResultDTO {
                 "    spotifyId: " + toIndentedString(spotifyId) + "\n" +
                 "    title: " + toIndentedString(title) + "\n" +
                 "    artist: " + toIndentedString(artist) + "\n" +
+                "    albumName: " + toIndentedString(albumName) + "\n" +
                 "    albumArt: " + toIndentedString(albumArt) + "\n" +
                 "    durationMs: " + toIndentedString(durationMs) + "\n" +
+                "    durationSeconds: " + toIndentedString(durationSeconds) + "\n" +
                 "    lyricsAvailable: " + toIndentedString(lyricsAvailable) + "\n" +
                 "}";
         return sb;
