@@ -1094,10 +1094,6 @@
           "durationMs": {
             "type": "integer",
             "example": 354000
-          },
-          "durationSeconds": {
-            "type": "integer",
-            "nullable": true
           }
         }
       },

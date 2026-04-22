@@ -102,8 +102,7 @@ class SongServiceTest {
     @Test
     void addToQueue_persistsSongAndBroadcastsQueue() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA", null);
-        dto.setDurationMs(230000);
+        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA", 230000);
 
         // Pre-populate lyrics cache
         songService.cacheLyrics("track123", "Here I go again...");
@@ -127,8 +126,7 @@ class SongServiceTest {
     @Test
     void addToQueue_noLyricsCache_persistsSongWithNullLyrics() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown", null);
-        dto.setDurationMs(180000);
+        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown", 180000);
 
         when(sessionService.getSessionById(2L)).thenReturn(session);
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));

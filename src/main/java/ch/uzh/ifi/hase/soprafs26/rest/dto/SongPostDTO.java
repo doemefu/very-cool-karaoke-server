@@ -26,8 +26,6 @@ public class SongPostDTO {
 
     private Integer durationMs;
 
-    private Integer durationSeconds;
-
     public SongPostDTO() {
         super();
     }
@@ -35,11 +33,11 @@ public class SongPostDTO {
     /**
      * Constructor with only required parameters
      */
-    public SongPostDTO(String spotifyId, String title, String artist, String albumName) {
+    public SongPostDTO(String spotifyId, String title, String artist, Integer durationMs) {
         this.spotifyId = spotifyId;
         this.title = title;
         this.artist = artist;
-        this.albumName = albumName;
+        this.durationMs = durationMs;
     }
 
     public SongPostDTO spotifyId(String spotifyId) {
@@ -142,19 +140,8 @@ public class SongPostDTO {
         this.durationMs = durationMs;
     }
 
-    public SongPostDTO durationSeconds(Integer durationSeconds) {
-        this.durationSeconds = durationSeconds;
-        return this;
-    }
-
-    @Schema(name = "durationSeconds", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @JsonProperty("durationSeconds")
     public Integer getDurationSeconds() {
-        return durationSeconds;
-    }
-
-    public void setDurationSeconds(Integer durationSeconds) {
-        this.durationSeconds = durationSeconds;
+        return durationMs != null ? durationMs / 1000 : null;
     }
 
     @Override
@@ -171,13 +158,12 @@ public class SongPostDTO {
                 Objects.equals(this.artist, songPostDTO.artist) &&
                 Objects.equals(this.albumArt, songPostDTO.albumArt) &&
                 Objects.equals(this.albumName, songPostDTO.albumName) &&
-                Objects.equals(this.durationMs, songPostDTO.durationMs) &&
-                Objects.equals(this.durationSeconds, songPostDTO.durationSeconds);
+                Objects.equals(this.durationMs, songPostDTO.durationMs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(spotifyId, title, artist, albumArt, albumName, durationMs, durationSeconds);
+        return Objects.hash(spotifyId, title, artist, albumArt, albumName, durationMs);
     }
 
     @Override
@@ -189,7 +175,6 @@ public class SongPostDTO {
                 "    albumArt: " + toIndentedString(albumArt) + "\n" +
                 "    albumName: " + toIndentedString(albumName) + "\n" +
                 "    durationMs: " + toIndentedString(durationMs) + "\n" +
-                "    durationSeconds: " + toIndentedString(durationSeconds) + "\n" +
                 "}";
         return sb;
     }
