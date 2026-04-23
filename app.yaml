@@ -1,8 +1,18 @@
-# https://cloud.google.com/appengine/docs/the-appengine-environments#comparing_high-level_features
-# https://cloud.google.com/appengine/docs/standard
+runtime: custom
+env: flex
 
-runtime: java17
-instance_class: F4_1G
+resources:
+  cpu: 1
+  memory_gb: 1.7
+  disk_size_gb: 10
 
-automatic_scaling:
-  max_instances: 1
+manual_scaling:
+  instances: 1
+
+liveness_check:
+  path: "/actuator/health"
+  initial_delay_sec: 300
+
+readiness_check:
+  path: "/actuator/health"
+  app_start_timeout_sec: 300
