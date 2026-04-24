@@ -66,8 +66,10 @@ public class SongService {
             dto.setSpotifyId(track.spotifyId());
             dto.setTitle(track.title());
             dto.setArtist(track.artist());
+            dto.setAlbumName(track.albumName());
             dto.setAlbumArt(track.albumArt());
             dto.setDurationMs(track.durationMs());
+            dto.setDurationSeconds(track.durationMs() / 1000);
             dto.setLyricsAvailable(lyrics != null);
             return dto;
         }).toList();
@@ -81,6 +83,7 @@ public class SongService {
         song.setSpotifyId(dto.getSpotifyId());
         song.setTitle(dto.getTitle());
         song.setArtist(dto.getArtist());
+        song.setAlbumName(dto.getAlbumName());
         song.setAlbumArt(dto.getAlbumArt());
         song.setDurationMs(dto.getDurationMs());
         song.setLyrics(getCachedLyrics(dto.getSpotifyId())); // nullable
@@ -93,6 +96,7 @@ public class SongService {
 
         // Broadcast updated queue (no votes yet → empty counts map)
         List<SongGetDTO> queue = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);
@@ -133,7 +137,32 @@ public class SongService {
         Map<Long, Long> emptyVotes = Collections.emptyMap();
 
         return session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
+    }
+
+    @Transactional
+    public void nextSong(Long sessionId) {
+        Session session = sessionService.getSessionById(sessionId);
+        List<Song> playlist = session.getPlaylist();
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        playlist.stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .ifPresent(s -> {
+                    s.markPerformed();
+                    songRepository.save(s);
+                });
+
+        List<SongGetDTO> updatedQueue = playlist.stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
+
+        SongGetDTO next = updatedQueue.isEmpty() ? null : updatedQueue.get(0);
+        songWebSocketPublisher.broadcastCurrentSong(sessionId, next);
+        songWebSocketPublisher.broadcastQueue(sessionId, updatedQueue);
     }
 }

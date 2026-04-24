@@ -24,6 +24,9 @@ public class Song {
     private String artist;
 
     @Column()
+    private String albumName;
+
+    @Column()
     private String albumArt;
 
     @Column(nullable = false)

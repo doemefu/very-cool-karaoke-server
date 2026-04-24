@@ -24,7 +24,11 @@ public class SongGetDTO {
 
     private String albumArt = null;
 
+    private String albumName = null;
+
     private Integer durationMs;
+
+    private Integer durationSeconds;
 
     private String lyrics = null;
 
@@ -133,6 +137,21 @@ public class SongGetDTO {
         this.albumArt = albumArt;
     }
 
+    public SongGetDTO albumName(String albumName) {
+        this.albumName = albumName;
+        return this;
+    }
+
+    @Schema(name = "albumName", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("albumName")
+    public String getAlbumName() {
+        return albumName;
+    }
+
+    public void setAlbumName(String albumName) {
+        this.albumName = albumName;
+    }
+
     public SongGetDTO durationMs(Integer durationMs) {
         this.durationMs = durationMs;
         return this;
@@ -146,6 +165,21 @@ public class SongGetDTO {
 
     public void setDurationMs(Integer durationMs) {
         this.durationMs = durationMs;
+    }
+
+    public SongGetDTO durationSeconds(Integer durationSeconds) {
+        this.durationSeconds = durationSeconds;
+        return this;
+    }
+
+    @Schema(name = "durationSeconds", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("durationSeconds")
+    public Integer getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(Integer durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 
     public SongGetDTO lyrics(String lyrics) {
@@ -246,7 +280,9 @@ public class SongGetDTO {
                 Objects.equals(this.title, songGetDTO.title) &&
                 Objects.equals(this.artist, songGetDTO.artist) &&
                 Objects.equals(this.albumArt, songGetDTO.albumArt) &&
+                Objects.equals(this.albumName, songGetDTO.albumName) &&
                 Objects.equals(this.durationMs, songGetDTO.durationMs) &&
+                Objects.equals(this.durationSeconds, songGetDTO.durationSeconds) &&
                 Objects.equals(this.lyrics, songGetDTO.lyrics) &&
                 Objects.equals(this.currentVoteCount, songGetDTO.currentVoteCount) &&
                 Objects.equals(this.performed, songGetDTO.performed) &&
@@ -255,7 +291,7 @@ public class SongGetDTO {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, spotifyId, title, artist, albumArt, durationMs, lyrics, currentVoteCount, performed, addedBy);
+        return Objects.hash(id, spotifyId, title, artist, albumArt, albumName, durationMs, durationSeconds, lyrics, currentVoteCount, performed, addedBy);
     }
 
     @Override
@@ -266,7 +302,9 @@ public class SongGetDTO {
                 "    title: " + toIndentedString(title) + "\n" +
                 "    artist: " + toIndentedString(artist) + "\n" +
                 "    albumArt: " + toIndentedString(albumArt) + "\n" +
+                "    albumName: " + toIndentedString(albumName) + "\n" +
                 "    durationMs: " + toIndentedString(durationMs) + "\n" +
+                "    durationSeconds: " + toIndentedString(durationSeconds) + "\n" +
                 "    lyrics: " + toIndentedString(lyrics) + "\n" +
                 "    currentVoteCount: " + toIndentedString(currentVoteCount) + "\n" +
                 "    performed: " + toIndentedString(performed) + "\n" +
