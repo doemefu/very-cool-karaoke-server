@@ -1,4 +1,4 @@
-name: Deploy Project to App Engine
+name: Deploy Project to Cloud Run
 
 on:
   push:
@@ -35,27 +35,34 @@ jobs:
           SONAR_ORGANIZATION: ${{secrets.SONAR_ORGANIZATION}}
 
   deploy:
-    name: Deploying to Google Cloud
+    name: Deploying to Cloud Run
     runs-on: ubuntu-latest
-    # needs: test
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_CREDENTIALS }}
 
-      - name: Deploy to App Engine
+      - name: Deploy to Cloud Run
         id: deploy
-        uses: google-github-actions/deploy-appengine@v3
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          deliverables: app.yaml
-          version: v2
+          service: karaoke-server
+          region: europe-west6
+          source: .
           env_vars: |
-            SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }},SPOTIFY_CLIENT_SECRET=${{ secrets.SPOTIFY_CLIENT_SECRET }}
+            SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}
+            SPOTIFY_CLIENT_SECRET=${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          flags: >-
+            --allow-unauthenticated
+            --max-instances=1
+            --timeout=3600
+            --port=8080
+            --concurrency=1000
 
       - name: Test
         run: curl "${{ steps.deploy.outputs.url }}"
