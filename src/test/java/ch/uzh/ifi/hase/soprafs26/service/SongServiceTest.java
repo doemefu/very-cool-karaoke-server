@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs26.service;
 
 import ch.uzh.ifi.hase.soprafs26.entity.Session;
 import ch.uzh.ifi.hase.soprafs26.entity.Song;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
@@ -12,8 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -244,5 +248,116 @@ class SongServiceTest {
         verify(songRepository, never()).save(any());
         verify(songWebSocketPublisher).broadcastCurrentSong(eq(3L), isNull());
         verify(songWebSocketPublisher).broadcastQueue(eq(3L), argThat(List::isEmpty));
+    }
+
+    @Test
+    void deleteSongFromQueue_success_removesQueuedSongAndBroadcasts() {
+        User admin = new User();
+        admin.setId(1L);
+
+        Session session = new Session();
+        session.setId(1L);
+        session.setAdmin(admin);
+
+        Song currentSong = new Song();
+        currentSong.setId(10L);
+        currentSong.setTitle("Current Song");
+        currentSong.setPerformed(false);
+        currentSong.setSession(session);
+
+        Song songToDelete = new Song();
+        songToDelete.setId(20L);
+        songToDelete.setTitle("Queued Song");
+        songToDelete.setPerformed(false);
+        songToDelete.setSession(session);
+
+        session.getPlaylist().add(currentSong);
+        session.getPlaylist().add(songToDelete);
+
+        when(sessionService.getSessionById(1L)).thenReturn(session);
+        when(songRepository.findById(20L)).thenReturn(Optional.of(songToDelete));
+
+        songService.deleteSongFromQueue(1L, 20L, "test-token");
+
+        assertEquals(1, session.getPlaylist().size());
+        assertFalse(session.getPlaylist().contains(songToDelete));
+        verify(songRepository).delete(songToDelete);
+
+        // Broadcast updated queue
+        verify(songWebSocketPublisher).broadcastQueue(eq(1L), anyList());
+        // Should not broadcast new song to not disturb the one still playing
+        verify(songWebSocketPublisher, never()).broadcastCurrentSong(anyLong(), any());
+    }
+
+    @Test
+    void deleteSongFromQueue_success_deletesCurrentSongAndBroadcastsNew() {
+        User admin = new User();
+        admin.setId(1L);
+
+        Session session = new Session();
+        session.setId(1L);
+        session.setAdmin(admin);
+
+        Song currentSong = new Song();
+        currentSong.setId(10L);
+        currentSong.setTitle("Current Song");
+        currentSong.setPerformed(false);
+        currentSong.setSession(session);
+
+        Song nextSong = new Song();
+        nextSong.setId(20L);
+        nextSong.setTitle("Next Song");
+        nextSong.setPerformed(false);
+        nextSong.setSession(session);
+
+        session.getPlaylist().add(currentSong);
+        session.getPlaylist().add(nextSong);
+
+        when(sessionService.getSessionById(1L)).thenReturn(session);
+        when(songRepository.findById(10L)).thenReturn(Optional.of(currentSong));
+        songService.deleteSongFromQueue(1L, 10L, "test-token");
+
+        assertEquals(1, session.getPlaylist().size());
+        verify(songRepository).delete(currentSong);
+
+        // Broadcast the updated queue and the new current song
+        verify(songWebSocketPublisher).broadcastQueue(eq(1L), anyList());
+        verify(songWebSocketPublisher).broadcastCurrentSong(eq(1L),
+                argThat(dto -> dto != null && "Next Song".equals(dto.getTitle())));
+    }
+
+    @Test
+    void deleteSongFromQueue_throws404_whenSessionNotFound() {
+        when(sessionService.getSessionById(99L)).thenThrow(
+                new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND)
+        );
+
+        ResponseStatusException exception = assertThrows(
+                org.springframework.web.server.ResponseStatusException.class,
+                () -> songService.deleteSongFromQueue(99L, 10L, "test-token")
+        );
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    }
+
+    @Test
+    void deleteSongFromQueue_throws404_whenSongNotInPlaylist() {
+        User admin = new User();
+        admin.setId(1L);
+
+        Session session = new Session();
+        session.setAdmin(admin);
+
+        Song someSong = new Song();
+        someSong.setId(10L);
+        session.getPlaylist().add(someSong);
+
+        when(sessionService.getSessionById(1L)).thenReturn(session);
+
+        // Delete song which is not in playlist
+        ResponseStatusException exception = assertThrows(
+                org.springframework.web.server.ResponseStatusException.class,
+                () -> songService.deleteSongFromQueue(1L, 99L, "test-token")
+        );
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }
 }

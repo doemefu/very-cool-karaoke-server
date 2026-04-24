@@ -30,14 +30,25 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final SongWebSocketPublisher songWebSocketPublisher;
+    private final UserService userService;
 
     @Autowired
     public SessionService(SessionRepository sessionRepository,
                           UserRepository userRepository,
-                          SongWebSocketPublisher songWebSocketPublisher) {
+                          SongWebSocketPublisher songWebSocketPublisher, UserService userService) {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.songWebSocketPublisher = songWebSocketPublisher;
+        this.userService = userService;
+    }
+
+    public void verifyIsAdmin(Long sessionId, String token) {
+        User user = userService.getUserByToken(token);
+        Session session = getSessionById(sessionId);
+        if (!session.getAdmin().getId().equals(user.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only the session admin can perform this action");
+        }
     }
 
     /*
