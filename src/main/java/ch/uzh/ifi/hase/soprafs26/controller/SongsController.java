@@ -4,6 +4,7 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.service.SongService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,11 +15,13 @@ import java.util.Optional;
 
 @RestController
 public class SongsController implements SongsApi {
-
+    private static final String TOKEN_HEADER = "token";
     private final SongService songService;
+    private final HttpServletRequest request;
 
-    SongsController(SongService songService) {
+    SongsController(SongService songService, HttpServletRequest request) {
         this.songService = songService;
+        this.request = request;
     }
 
     // GET /songs/search?query= — Search songs via Spotify Web API (S11)
@@ -70,8 +73,9 @@ public class SongsController implements SongsApi {
     // Returns 204 on success, 403 if not admin, 404 if session or song not found
     @Override
     public ResponseEntity<Void> sessionsSessionIdSongsSongIdDelete(Long sessionId, Long songId) {
-        // TODO: verify caller is admin, delegate to songService.removeFromQueue(sessionId, songId)
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        String token = request.getHeader(TOKEN_HEADER);
+        songService.deleteSongFromQueue(sessionId, songId, token);
+        return ResponseEntity.noContent().build();
     }
 
     // PUT /sessions/{sessionId}/songs/{songId}/played — Mark a song as played, admin only

@@ -8,8 +8,10 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
@@ -136,4 +138,27 @@ public class SongService {
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
     }
+
+    @Transactional
+    public void deleteSongFromQueue(Long sessionId, Long songId, String token) {
+        sessionService.verifyIsAdmin(sessionId, token);
+        Session session = sessionService.getSessionById(sessionId);
+
+        Song songToDelete = songRepository.findById(songId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
+
+        if (!songToDelete.getSession().getId().equals(sessionId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found in this session");
+        }
+
+        session.removeSong(songToDelete);
+
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+        List<SongGetDTO> queue = session.getPlaylist().stream()
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
+        songWebSocketPublisher.broadcastQueue(sessionId, queue);
+    }
+
+
 }
