@@ -243,8 +243,14 @@ components:
         albumArt:
           type: string
           nullable: true
+        albumName:
+          type: string
+          nullable: true
         durationMs:
           type: integer
+        durationSeconds:
+          type: integer
+          nullable: true
         lyrics:
           type: string
           nullable: true

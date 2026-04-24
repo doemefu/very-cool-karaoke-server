@@ -68,6 +68,7 @@ public interface DTOMapper {
     VotingRoundGetDTO toVotingRoundGetDTO(VotingRound round, @Context Map<Long, Long> counts);
 
     @Mapping(target = "currentVoteCount", expression = "java(counts.getOrDefault(song.getId(), 0L).intValue())")
+    @Mapping(target = "durationSeconds", expression = "java(song.getDurationMs() != null ? song.getDurationMs() / 1000 : null)")
     SongGetDTO toSongGetDTO(Song song, @Context Map<Long, Long> counts);
 
     @Named("sortedByVotes")

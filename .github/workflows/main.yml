@@ -31,6 +31,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{secrets.SONAR_PROJECT_KEY}}
+          SONAR_ORGANIZATION: ${{secrets.SONAR_ORGANIZATION}}
 
   deploy:
     name: Deploying to Google Cloud
@@ -51,7 +53,7 @@ jobs:
         uses: google-github-actions/deploy-appengine@v3
         with:
           deliverables: app.yaml
-          version: v1
+          version: v2
           env_vars: |
             SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }},SPOTIFY_CLIENT_SECRET=${{ secrets.SPOTIFY_CLIENT_SECRET }}
 

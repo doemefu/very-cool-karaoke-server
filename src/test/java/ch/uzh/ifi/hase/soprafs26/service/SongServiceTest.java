@@ -17,8 +17,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.isNull;
 
 class SongServiceTest {
 
@@ -47,7 +49,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsAvailable_setsLyricsAvailableTrue() {
-        SpotifyTrack track = new SpotifyTrack("id1", "Dancing Queen", "ABBA", "http://img/art.jpg", 230000);
+        SpotifyTrack track = new SpotifyTrack("id1", "Dancing Queen", "ABBA", "ABBA Gold", "http://img/art.jpg", 230000);
         when(spotifyService.search("ABBA")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("ABBA", "Dancing Queen")).thenReturn("Here I go again...");
 
@@ -65,7 +67,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsNotFound_setsLyricsAvailableFalse() {
-        SpotifyTrack track = new SpotifyTrack("id2", "Mystery Song", "Unknown", "http://img/art.jpg", 180000);
+        SpotifyTrack track = new SpotifyTrack("id2", "Mystery Song", "Unknown", null, "http://img/art.jpg", 180000);
         when(spotifyService.search("Mystery")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("Unknown", "Mystery Song")).thenReturn(null);
 
@@ -77,7 +79,7 @@ class SongServiceTest {
 
     @Test
     void search_lyricsAreCachedBySpotifyId() {
-        SpotifyTrack track = new SpotifyTrack("id3", "Waterloo", "ABBA", "http://img/art.jpg", 170000);
+        SpotifyTrack track = new SpotifyTrack("id3", "Waterloo", "ABBA", "Waterloo", "http://img/art.jpg", 170000);
         when(spotifyService.search("Waterloo")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("ABBA", "Waterloo")).thenReturn("My my, at Waterloo Napoleon did surrender");
 
@@ -88,7 +90,7 @@ class SongServiceTest {
 
     @Test
     void search_noLyrics_cachedAsNull() {
-        SpotifyTrack track = new SpotifyTrack("id4", "Unknown Song", "Unknown", "http://img/art.jpg", 200000);
+        SpotifyTrack track = new SpotifyTrack("id4", "Unknown Song", "Unknown", null, "http://img/art.jpg", 200000);
         when(spotifyService.search("Unknown")).thenReturn(List.of(track));
         when(lyricsService.fetchLyrics("Unknown", "Unknown Song")).thenReturn(null);
 
@@ -100,8 +102,7 @@ class SongServiceTest {
     @Test
     void addToQueue_persistsSongAndBroadcastsQueue() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA");
-        dto.setDurationMs(230000);
+        SongPostDTO dto = new SongPostDTO("track123", "Dancing Queen", "ABBA", 230000);
 
         // Pre-populate lyrics cache
         songService.cacheLyrics("track123", "Here I go again...");
@@ -125,8 +126,7 @@ class SongServiceTest {
     @Test
     void addToQueue_noLyricsCache_persistsSongWithNullLyrics() {
         Session session = new Session();
-        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown");
-        dto.setDurationMs(180000);
+        SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown", 180000);
 
         when(sessionService.getSessionById(2L)).thenReturn(session);
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -135,5 +135,114 @@ class SongServiceTest {
 
         assertNull(result.getLyrics());
         verify(songWebSocketPublisher).broadcastQueue(eq(2L), anyList());
+    }
+
+    @Test
+    void getQueue_excludesPerformedSongs() {
+        Session session = new Session();
+
+        Song performed = new Song();
+        performed.setId(1L);
+        performed.setSpotifyId("s1");
+        performed.setTitle("Done");
+        performed.setArtist("A");
+        performed.setDurationMs(100);
+        performed.setPerformed(true);
+        performed.setSession(session);
+
+        Song unperformed = new Song();
+        unperformed.setId(2L);
+        unperformed.setSpotifyId("s2");
+        unperformed.setTitle("Next");
+        unperformed.setArtist("B");
+        unperformed.setDurationMs(200);
+        unperformed.setPerformed(false);
+        unperformed.setSession(session);
+
+        session.getPlaylist().add(performed);
+        session.getPlaylist().add(unperformed);
+
+        when(sessionService.getSessionById(99L)).thenReturn(session);
+
+        List<SongGetDTO> queue = songService.getQueue(99L);
+
+        assertEquals(1, queue.size());
+        assertEquals("Next", queue.get(0).getTitle());
+    }
+
+    @Test
+    void nextSong_advancesToNextUnperformedSong() {
+        Session session = new Session();
+
+        Song first = new Song();
+        first.setId(1L);
+        first.setSpotifyId("s1");
+        first.setTitle("First");
+        first.setArtist("Artist");
+        first.setDurationMs(180000);
+        first.setPerformed(false);
+        first.setSession(session);
+
+        Song second = new Song();
+        second.setId(2L);
+        second.setSpotifyId("s2");
+        second.setTitle("Second");
+        second.setArtist("Artist");
+        second.setDurationMs(200000);
+        second.setPerformed(false);
+        second.setSession(session);
+
+        session.getPlaylist().add(first);
+        session.getPlaylist().add(second);
+
+        when(sessionService.getSessionById(1L)).thenReturn(session);
+        when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        songService.nextSong(1L);
+
+        assertTrue(first.getPerformed(), "first song should be marked performed");
+        assertFalse(second.getPerformed(), "second song should still be unperformed");
+
+        verify(songWebSocketPublisher).broadcastCurrentSong(eq(1L),
+                argThat(dto -> dto != null && "Second".equals(dto.getTitle())));
+        verify(songWebSocketPublisher).broadcastQueue(eq(1L),
+                argThat(queue -> queue.size() == 1 && "Second".equals(queue.get(0).getTitle())));
+    }
+
+    @Test
+    void nextSong_lastSong_broadcastsNullCurrentSong() {
+        Session session = new Session();
+
+        Song only = new Song();
+        only.setId(3L);
+        only.setSpotifyId("s3");
+        only.setTitle("Last");
+        only.setArtist("Artist");
+        only.setDurationMs(200000);
+        only.setPerformed(false);
+        only.setSession(session);
+
+        session.getPlaylist().add(only);
+
+        when(sessionService.getSessionById(2L)).thenReturn(session);
+        when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        songService.nextSong(2L);
+
+        assertTrue(only.getPerformed());
+        verify(songWebSocketPublisher).broadcastCurrentSong(eq(2L), isNull());
+        verify(songWebSocketPublisher).broadcastQueue(eq(2L), argThat(List::isEmpty));
+    }
+
+    @Test
+    void nextSong_emptyPlaylist_broadcastsNullWithoutError() {
+        Session session = new Session(); // empty playlist
+        when(sessionService.getSessionById(3L)).thenReturn(session);
+
+        songService.nextSong(3L);
+
+        verify(songRepository, never()).save(any());
+        verify(songWebSocketPublisher).broadcastCurrentSong(eq(3L), isNull());
+        verify(songWebSocketPublisher).broadcastQueue(eq(3L), argThat(List::isEmpty));
     }
 }

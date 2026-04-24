@@ -102,8 +102,9 @@ public class SpotifyService {
             tracks.add(new SpotifyTrack(
                     item.path("id").textValue(),
                     item.path("name").textValue(),
-                    item.path("artists").get(0).path("name").textValue(),
-                    item.path("album").path("images").get(0).path("url").textValue(),
+                    item.path("artists").path(0).path("name").textValue(),
+                    item.path("album").path("name").textValue(),
+                    item.path("album").path("images").path(0).path("url").textValue(),
                     item.path("duration_ms").asInt()
             ));
         }

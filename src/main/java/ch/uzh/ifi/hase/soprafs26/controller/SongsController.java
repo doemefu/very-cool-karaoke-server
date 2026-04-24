@@ -69,6 +69,14 @@ public class SongsController implements SongsApi {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
+    // POST /sessions/{sessionId}/songs/next — advance to next song when current ends
+    // Marks the current song as performed, broadcasts next currentSong + queue
+    @Override
+    public ResponseEntity<Void> sessionsSessionIdSongsNextPost(Long sessionId) {
+        songService.nextSong(sessionId);
+        return ResponseEntity.noContent().build();
+    }
+
     // DELETE /sessions/{sessionId}/songs/{songId} — Remove a song from the queue, admin only (S7)
     // Returns 204 on success, 403 if not admin, 404 if session or song not found
     @Override
@@ -78,11 +86,9 @@ public class SongsController implements SongsApi {
         return ResponseEntity.noContent().build();
     }
 
-    // PUT /sessions/{sessionId}/songs/{songId}/played — Mark a song as played, admin only
-    // Returns 200 + updated SongGetDTO, 403 if not admin, 404 if session or song not found
+    // PUT /sessions/{sessionId}/songs/{songId}/played — no-op stub (advancement via POST /songs/next)
     @Override
-    public ResponseEntity<SongGetDTO> sessionsSessionIdSongsSongIdPlayedPut(Long sessionId, Long songId) {
-        // TODO: verify caller is admin, delegate to songService.markAsPlayed(sessionId, songId)
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    public ResponseEntity<Void> sessionsSessionIdSongsSongIdPlayedPut(Long sessionId, Long songId) {
+        return ResponseEntity.noContent().build();
     }
 }
