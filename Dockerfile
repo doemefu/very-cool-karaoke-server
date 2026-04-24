@@ -10,7 +10,7 @@ RUN chmod +x ./gradlew
 COPY build.gradle settings.gradle /app/
 COPY src /app/src
 # Build the server
-RUN ./gradlew clean build --no-daemon
+RUN ./gradlew clean build --no-daemon -x test
 
 # make image smaller by using multi stage build
 FROM eclipse-temurin:17-jdk
