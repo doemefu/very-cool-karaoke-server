@@ -1,6 +1,5 @@
 runtime: custom
 env: flex
-cloud_build_timeout: 1800s
 
 resources:
   cpu: 1
