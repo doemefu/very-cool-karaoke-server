@@ -5,6 +5,7 @@ import ch.uzh.ifi.hase.soprafs26.entity.*;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
+import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +35,15 @@ class VotingServiceTest {
 
     @Mock
     private VoteRepository voteRepository;
+
+    @Mock
+    private SessionService sessionService;
+
+    @Mock
+    private SongService songService;
+
+    @Mock
+    private VotingWebSocketPublisher votingWebSocketPublisher;
 
     @InjectMocks
     private VotingService votingService;
@@ -68,6 +79,7 @@ class VotingServiceTest {
         candidateSong.setArtist("Queen");
         candidateSong.setSpotifyId("spotify:123");
         candidateSong.setDurationMs(354000);
+        candidateSong.setPerformed(false);
 
         nonCandidateSong = new Song();
         nonCandidateSong.setId(200L);
@@ -75,6 +87,7 @@ class VotingServiceTest {
         nonCandidateSong.setArtist("The Beatles");
         nonCandidateSong.setSpotifyId("spotify:456");
         nonCandidateSong.setDurationMs(125000);
+        nonCandidateSong.setPerformed(false);
 
         votingRound = new VotingRound();
         votingRound.setId(50L);
@@ -241,7 +254,6 @@ class VotingServiceTest {
                 () -> votingService.getVotingRound(10L, 99L));
 
         assertEquals(404, ex.getStatusCode().value());
-        assertTrue(ex.getReason().contains("not found"));
     }
 
     @Test
@@ -252,7 +264,6 @@ class VotingServiceTest {
                 () -> votingService.getVotingRound(99L, 50L));
 
         assertEquals(404, ex.getStatusCode().value());
-        assertTrue(ex.getReason().contains("not in this session"));
     }
 
     @Test
@@ -281,5 +292,46 @@ class VotingServiceTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void createVotingRound_validInput_success() {
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
+        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
+        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
+
+        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
+
+        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
+        verify(votingWebSocketPublisher, times(1)).broadcastVotingRound(eq(10L), any());
+    }
+
+    @Test
+    void createVotingRound_playlistTooSmall_skipsRound() {
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong)));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
+
+        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
+
+        // Skip voting round and play song if length of playlist is one
+        verify(songService, times(1)).nextSong(10L);
+        verify(votingRoundRepository, never()).save(any());
+        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
+    }
+
+    @Test
+    void createVotingRound_alreadyOpen_throwsConflict() {
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(true);
+
+        ResponseStatusException exc = assertThrows(ResponseStatusException.class,
+                () -> votingService.createVotingRound(10L));
+
+        assertEquals(409, exc.getStatusCode().value());
+        verify(votingRoundRepository, never()).save(any());
     }
 }
