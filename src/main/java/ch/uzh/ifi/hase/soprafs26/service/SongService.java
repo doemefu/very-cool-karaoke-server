@@ -27,18 +27,21 @@ public class SongService {
     private final SongRepository songRepository;
     private final SessionService sessionService;
     private final SongWebSocketPublisher songWebSocketPublisher;
+    private final VotingService votingService;
 
     // ConcurrentHashMap doesn't allow null values, so we wrap in Optional
     private final Map<String, Optional<String>> lyricsCache = new ConcurrentHashMap<>();
 
     public SongService(SpotifyService spotifyService, LyricsService lyricsService,
                        SongRepository songRepository, SessionService sessionService,
-                       SongWebSocketPublisher songWebSocketPublisher) {
+                       SongWebSocketPublisher songWebSocketPublisher,
+                       VotingService votingService) {
         this.spotifyService = spotifyService;
         this.lyricsService = lyricsService;
         this.songRepository = songRepository;
         this.sessionService = sessionService;
         this.songWebSocketPublisher = songWebSocketPublisher;
+        this.votingService = votingService;
     }
 
     /**
@@ -156,13 +159,34 @@ public class SongService {
                     songRepository.save(s);
                 });
 
-        List<SongGetDTO> updatedQueue = playlist.stream()
+        List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
 
-        SongGetDTO next = updatedQueue.isEmpty() ? null : updatedQueue.get(0);
-        songWebSocketPublisher.broadcastCurrentSong(sessionId, next);
-        songWebSocketPublisher.broadcastQueue(sessionId, updatedQueue);
+        if (remainingQueue.size() >= 2) {
+            votingService.createVotingRound(sessionId);
+        } else if (remainingQueue.size() == 1) {
+            SongGetDTO nextSong = remainingQueue.get(0);
+            songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSong);
+            songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        } else {
+            songWebSocketPublisher.broadcastCurrentSong(sessionId, null);
+            songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        }
+    }
+
+    public void broadcastVotingRoundSongWinner(Long sessionId, Song winner) {
+        Session session = sessionService.getSessionById(sessionId);
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+        SongGetDTO nextSong = DTOMapper.INSTANCE.toSongGetDTO(winner, emptyVotes);
+
+        List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
+                .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
+                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes))
+                .toList();
+
+        songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSong);
+        songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
     }
 }

@@ -2,8 +2,10 @@ package ch.uzh.ifi.hase.soprafs26.service;
 
 import ch.uzh.ifi.hase.soprafs26.constant.SessionStatus;
 import ch.uzh.ifi.hase.soprafs26.constant.VotingStatus;
-import ch.uzh.ifi.hase.soprafs26.entity.*;
-import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
+import ch.uzh.ifi.hase.soprafs26.entity.Vote;
+import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
@@ -15,6 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.scheduling.TaskScheduler;
+import java.time.Instant;
+import java.util.List;
+import java.util.Random;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
