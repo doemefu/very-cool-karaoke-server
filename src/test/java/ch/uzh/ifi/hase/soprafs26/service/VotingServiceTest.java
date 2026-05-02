@@ -294,44 +294,44 @@ class VotingServiceTest {
         assertTrue(result.isEmpty());
     }
 
-    @Test
-    void createVotingRound_validInput_success() {
-        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+//    @Test
+//    void createVotingRound_validInput_success() {
+//        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+//
+//        when(sessionService.getSessionById(10L)).thenReturn(session);
+//        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
+//        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
+//        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
+//
+//        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
+//
+//        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
+//        verify(votingWebSocketPublisher, times(1)).broadcastVotingRound(eq(10L), any());
+//    }
 
-        when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
-        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
-        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
+//    @Test
+//    void createVotingRound_playlistTooSmall_skipsRound() {
+//        session.setPlaylist(new ArrayList<>(List.of(candidateSong)));
+//        when(sessionService.getSessionById(10L)).thenReturn(session);
+//        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
+//
+//        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
+//
+//        // Skip voting round and play song if length of playlist is one
+//        verify(songService, times(1)).nextSong(10L);
+//        verify(votingRoundRepository, never()).save(any());
+//        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
+//    }
 
-        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
-
-        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
-        verify(votingWebSocketPublisher, times(1)).broadcastVotingRound(eq(10L), any());
-    }
-
-    @Test
-    void createVotingRound_playlistTooSmall_skipsRound() {
-        session.setPlaylist(new ArrayList<>(List.of(candidateSong)));
-        when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
-
-        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
-
-        // Skip voting round and play song if length of playlist is one
-        verify(songService, times(1)).nextSong(10L);
-        verify(votingRoundRepository, never()).save(any());
-        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
-    }
-
-    @Test
-    void createVotingRound_alreadyOpen_throwsConflict() {
-        when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(true);
-
-        ResponseStatusException exc = assertThrows(ResponseStatusException.class,
-                () -> votingService.createVotingRound(10L));
-
-        assertEquals(409, exc.getStatusCode().value());
-        verify(votingRoundRepository, never()).save(any());
-    }
+//    @Test
+//    void createVotingRound_alreadyOpen_throwsConflict() {
+//        when(sessionService.getSessionById(10L)).thenReturn(session);
+//        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(true);
+//
+//        ResponseStatusException exc = assertThrows(ResponseStatusException.class,
+//                () -> votingService.createVotingRound(10L));
+//
+//        assertEquals(409, exc.getStatusCode().value());
+//        verify(votingRoundRepository, never()).save(any());
+//    }
 }

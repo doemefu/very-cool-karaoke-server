@@ -1,32 +1,23 @@
 package ch.uzh.ifi.hase.soprafs26.service;
 
-import ch.uzh.ifi.hase.soprafs26.constant.SessionStatus;
 import ch.uzh.ifi.hase.soprafs26.constant.VotingStatus;
-import ch.uzh.ifi.hase.soprafs26.entity.Song;
-import ch.uzh.ifi.hase.soprafs26.entity.User;
-import ch.uzh.ifi.hase.soprafs26.entity.Vote;
-import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
+import ch.uzh.ifi.hase.soprafs26.entity.*;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.scheduling.TaskScheduler;
 import java.time.Instant;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,17 +30,21 @@ public class VotingService {
     private final SessionService sessionService;
     private final SongService songService;
     private final VotingWebSocketPublisher votingWebSocketPublisher;
+    private final Random random = new Random();
+    private final TaskScheduler taskScheduler;
 
     public VotingService(VotingRoundRepository votingRoundRepository,
                          SongRepository songRepository, VoteRepository voteRepository,
-                         SessionService sessionService, SongService songService,
-                         VotingWebSocketPublisher votingWebSocketPublisher) {
+                         SessionService sessionService, @Lazy SongService songService,
+                         VotingWebSocketPublisher votingWebSocketPublisher,
+                         TaskScheduler taskScheduler) {
         this.votingRoundRepository = votingRoundRepository;
         this.songRepository = songRepository;
         this.voteRepository = voteRepository;
         this.sessionService = sessionService;
         this.songService = songService;
         this.votingWebSocketPublisher = votingWebSocketPublisher;
+        this.taskScheduler = taskScheduler;
     }
 
     @Transactional
@@ -135,5 +130,51 @@ public class VotingService {
         Map<Long, Long> counts = getVoteCounts(savedRound);
         VotingRoundGetDTO roundDTO = DTOMapper.INSTANCE.toVotingRoundGetDTO(savedRound, counts);
         votingWebSocketPublisher.broadcastVotingRound(sessionId, roundDTO);
+
+        taskScheduler.schedule(
+                () -> finishVotingRoundAndPlayNextSong(sessionId, savedRound.getId()),
+                Instant.now().plusSeconds(30)
+        );
+    }
+
+    private void moveWinnerToFrontOfQueue(long sessionId, Song winner) {
+        Session session = sessionService.getSessionById(sessionId);
+        List<Song> playlist = session.getPlaylist();
+        int indexOfWinner = playlist.indexOf(winner);
+        if (indexOfWinner == -1) {
+            return;
+        }
+        int indexOfFirstUnplayedSong = -1;
+
+        for (int i = 0; i < playlist.size(); i++) {
+            if (!Boolean.TRUE.equals(playlist.get(i).getPerformed())) {
+                indexOfFirstUnplayedSong = i;
+                break;
+            }
+        }
+
+        if (indexOfFirstUnplayedSong != -1 && indexOfWinner != indexOfFirstUnplayedSong) {
+            Collections.swap(playlist, indexOfWinner, indexOfFirstUnplayedSong);
+        }
+    }
+
+
+    @Transactional
+    public void finishVotingRoundAndPlayNextSong(Long sessionId, Long votingRoundId) {
+        VotingRound round = votingRoundRepository.findById(votingRoundId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Voting round not found"));
+        round.setStatus(VotingStatus.CLOSED);
+        votingRoundRepository.save(round);
+
+        Map<Long, Long> counts = getVoteCounts(round);
+        long maxVotes = counts.values().stream().max(Long::compare).orElse(0L);
+
+        List<Song> winnerCandidates = round.getCandidates().stream()
+                .filter(s -> counts.getOrDefault(s.getId(), 0L) == maxVotes)
+                .toList();
+
+        Song votingRoundSongWinner = winnerCandidates.get(random.nextInt(winnerCandidates.size()));
+        moveWinnerToFrontOfQueue(sessionId, votingRoundSongWinner);
+        songService.broadcastVotingRoundSongWinner(sessionId, votingRoundSongWinner);
     }
 }
