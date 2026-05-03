@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.transaction.annotation.Transactional;
 
 @Controller
 public class ReactionMessageHandler {
@@ -31,6 +32,7 @@ public class ReactionMessageHandler {
         this.reactionPublisher = reactionPublisher;
     }
 
+    @Transactional(readOnly = true)
     @MessageMapping("/sessions/{sessionId}/reactions")
     public void handleReaction(@DestinationVariable Long sessionId,
                                @Payload Map<String, Object> payload) {
