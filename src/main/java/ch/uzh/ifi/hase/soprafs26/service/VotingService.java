@@ -161,8 +161,11 @@ public class VotingService {
 
     @Transactional
     public void finishVotingRoundAndPlayNextSong(Long sessionId, Long votingRoundId) {
-        VotingRound round = votingRoundRepository.findById(votingRoundId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Voting round not found"));
+        VotingRound round = votingRoundRepository.findById(votingRoundId).orElse(null);
+        if (round == null || round.getStatus() == VotingStatus.CLOSED) {
+            return;
+        }
+
         round.setStatus(VotingStatus.CLOSED);
         votingRoundRepository.save(round);
 

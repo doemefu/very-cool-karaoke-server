@@ -9,14 +9,17 @@ import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -44,6 +47,9 @@ class VotingServiceTest {
 
     @Mock
     private VotingWebSocketPublisher votingWebSocketPublisher;
+
+    @Mock
+    private TaskScheduler taskScheduler;
 
     @InjectMocks
     private VotingService votingService;
@@ -294,44 +300,85 @@ class VotingServiceTest {
         assertTrue(result.isEmpty());
     }
 
-//    @Test
-//    void createVotingRound_validInput_success() {
-//        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
-//
-//        when(sessionService.getSessionById(10L)).thenReturn(session);
-//        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
-//        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
-//        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
-//
-//        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
-//
-//        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
-//        verify(votingWebSocketPublisher, times(1)).broadcastVotingRound(eq(10L), any());
-//    }
+    @Test
+    void createVotingRound_validInput_schedulesTimerAndBroadcasts() {
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
 
-//    @Test
-//    void createVotingRound_playlistTooSmall_skipsRound() {
-//        session.setPlaylist(new ArrayList<>(List.of(candidateSong)));
-//        when(sessionService.getSessionById(10L)).thenReturn(session);
-//        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
-//
-//        assertDoesNotThrow(() -> votingService.createVotingRound(10L));
-//
-//        // Skip voting round and play song if length of playlist is one
-//        verify(songService, times(1)).nextSong(10L);
-//        verify(votingRoundRepository, never()).save(any());
-//        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
-//    }
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
+        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
+        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
 
-//    @Test
-//    void createVotingRound_alreadyOpen_throwsConflict() {
-//        when(sessionService.getSessionById(10L)).thenReturn(session);
-//        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(true);
-//
-//        ResponseStatusException exc = assertThrows(ResponseStatusException.class,
-//                () -> votingService.createVotingRound(10L));
-//
-//        assertEquals(409, exc.getStatusCode().value());
-//        verify(votingRoundRepository, never()).save(any());
-//    }
+        votingService.createVotingRound(10L);
+
+        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
+        verify(votingWebSocketPublisher, times(1)).broadcastVotingRound(eq(10L), any());
+
+        ArgumentCaptor<Instant> timeCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler, times(1)).schedule(any(Runnable.class), timeCaptor.capture());
+        assertTrue(timeCaptor.getValue().isAfter(Instant.now().plusSeconds(29)));
+    }
+
+    @Test
+    void createVotingRound_playlistTooSmall_skipsRound() {
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong)));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
+
+        votingService.createVotingRound(10L);
+
+        verify(songService, times(1)).nextSong(10L);
+        verify(votingRoundRepository, never()).save(any());
+        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
+        verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
+    void createVotingRound_alreadyOpen_throwsConflict() {
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(true);
+
+        ResponseStatusException exc = assertThrows(ResponseStatusException.class,
+                () -> votingService.createVotingRound(10L));
+
+        assertEquals(409, exc.getStatusCode().value());
+        verify(votingRoundRepository, never()).save(any());
+        verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
+    void finishVotingRound_calculatesWinnerClosesRoundAndSwapsQueue() {
+        session.setPlaylist(new ArrayList<>(List.of(nonCandidateSong, candidateSong)));
+
+        votingRound.getCandidates().add(nonCandidateSong);
+
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+
+        VoteRepository.SongVoteCount winnerCount = mock(VoteRepository.SongVoteCount.class);
+        when(winnerCount.getSongId()).thenReturn(100L);
+        when(winnerCount.getCount()).thenReturn(5L);
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(winnerCount));
+
+        votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
+
+        assertEquals(VotingStatus.CLOSED, votingRound.getStatus());
+        verify(votingRoundRepository, times(1)).save(votingRound);
+
+        assertEquals(candidateSong, session.getPlaylist().get(0));
+        assertEquals(nonCandidateSong, session.getPlaylist().get(1));
+
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
+    }
+
+    @Test
+    void finishVotingRound_alreadyClosed_doesNothing() {
+        votingRound.setStatus(VotingStatus.CLOSED);
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+
+        votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
+
+        verify(votingRoundRepository, never()).save(any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+    }
 }
