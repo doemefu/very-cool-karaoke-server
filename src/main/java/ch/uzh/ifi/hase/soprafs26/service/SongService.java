@@ -8,8 +8,10 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +30,6 @@ public class SongService {
     private final SessionService sessionService;
     private final SongWebSocketPublisher songWebSocketPublisher;
 
-    // ConcurrentHashMap doesn't allow null values, so we wrap in Optional
     private final Map<String, Optional<String>> lyricsCache = new ConcurrentHashMap<>();
 
     public SongService(SpotifyService spotifyService, LyricsService lyricsService,
@@ -143,6 +144,65 @@ public class SongService {
     }
 
     @Transactional
+    public void deleteSongFromQueue(Long sessionId, Long songId, String token) {
+        sessionService.verifyIsAdmin(sessionId, token);
+        Session session = sessionService.getSessionById(sessionId);
+
+        Song songToDelete = songRepository.findById(songId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
+
+        if (!songToDelete.getSession().getId().equals(sessionId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found in this session");
+        }
+
+        Optional<Song> currentSongBeforeDelete = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst();
+
+        boolean deletedCurrentSong = currentSongBeforeDelete
+                .map(currentSong -> currentSong.getId().equals(songId))
+                .orElse(false);
+
+        session.removeSong(songToDelete);
+        songRepository.delete(songToDelete);
+
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        if (deletedCurrentSong) {
+            // Check how many songs are actually left
+            List<Song> remainingQueue = session.getPlaylist().stream()
+                    .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                    .toList();
+
+            if (remainingQueue.size() >= 2) {
+                // TODO: Uncomment these 3 lines in the next issue once createVotingRound is implemented!
+                /* VotingRound newRound = votingService.createVotingRound(sessionId);
+                VotingRoundGetDTO roundDTO = DTOMapper.INSTANCE.toVotingRoundGetDTO(newRound, emptyVotes);
+                votingWebSocketPublisher.broadcastVotingRound(sessionId, roundDTO);
+                */
+
+                songWebSocketPublisher.broadcastCurrentSong(sessionId, null);
+                songWebSocketPublisher.broadcastLyrics(sessionId, null);
+
+            } else if (remainingQueue.size() == 1) {
+                Song nextSong = remainingQueue.get(0);
+                songWebSocketPublisher.broadcastCurrentSong(sessionId,
+                        DTOMapper.INSTANCE.toSongGetDTO(nextSong, emptyVotes));
+                songWebSocketPublisher.broadcastLyrics(sessionId, nextSong.getLyrics());
+
+            } else {
+                songWebSocketPublisher.broadcastCurrentSong(sessionId, null);
+                songWebSocketPublisher.broadcastLyrics(sessionId, null);
+            }
+        }
+        List<SongGetDTO> queue = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
+        songWebSocketPublisher.broadcastQueue(sessionId, queue);
+    }
+
+
     public void nextSong(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
         List<Song> playlist = session.getPlaylist();

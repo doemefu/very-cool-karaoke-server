@@ -17,10 +17,11 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.verify;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -112,5 +113,56 @@ class SongsControllerTest {
                         .content("{\"spotifyId\":\"track123\",\"artist\":\"ABBA\"}")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteSong_validRequest_returns204AndDelegatesToService() throws Exception {
+        willDoNothing().given(songService).deleteSongFromQueue(42L, 7L, "admin-token");
+
+        mockMvc.perform(delete("/sessions/42/songs/7")
+                        .header("token", "admin-token"))
+                .andExpect(status().isNoContent());
+
+        verify(songService).deleteSongFromQueue(42L, 7L, "admin-token");
+    }
+
+    @Test
+    void deleteSong_notAdmin_returns403() throws Exception {
+        willThrow(new ResponseStatusException(FORBIDDEN, "Only the session admin can perform this action"))
+                .given(songService).deleteSongFromQueue(eq(42L), eq(7L), any());
+
+        mockMvc.perform(delete("/sessions/42/songs/7")
+                        .header("token", "intruder-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deleteSong_songNotFound_returns404() throws Exception {
+        willThrow(new ResponseStatusException(NOT_FOUND, "Song not found"))
+                .given(songService).deleteSongFromQueue(eq(42L), eq(999L), any());
+
+        mockMvc.perform(delete("/sessions/42/songs/999")
+                        .header("token", "admin-token"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteSong_sessionNotFound_returns404() throws Exception {
+        willThrow(new ResponseStatusException(NOT_FOUND, "Session not found"))
+                .given(songService).deleteSongFromQueue(eq(99L), eq(7L), any());
+
+        mockMvc.perform(delete("/sessions/99/songs/7")
+                        .header("token", "admin-token"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteSong_songFromDifferentSession_returns404() throws Exception {
+        willThrow(new ResponseStatusException(NOT_FOUND, "Song not found in this session"))
+                .given(songService).deleteSongFromQueue(eq(42L), eq(7L), any());
+
+        mockMvc.perform(delete("/sessions/42/songs/7")
+                        .header("token", "admin-token"))
+                .andExpect(status().isNotFound());
     }
 }
