@@ -23,6 +23,8 @@ public class SpotifyService {
     private static final Logger log = LoggerFactory.getLogger(SpotifyService.class);
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
     private static final String SEARCH_URL = "https://api.spotify.com/v1/search?q={q}&type=track&limit=5";
+    private static final String RECOMMENDATIONS_URL =
+            "https://api.spotify.com/v1/recommendations?seed_tracks={spotifyId}&limit=10";
     private final RestTemplate restTemplate;
     @Value("${SPOTIFY_CLIENT_ID:}")
     private String clientId = "";
@@ -83,6 +85,50 @@ public class SpotifyService {
                         "Spotify authentication failed after token refresh");
             }
         }
+    }
+
+    public List<SpotifyTrack> getRecommendations(String spotifyId) {
+        try {
+            return doGetRecommendations(spotifyId);
+        }
+        catch (HttpClientErrorException.Unauthorized e) {
+            log.warn("Spotify token rejected (401) — refreshing and retrying once");
+            fetchToken();
+            try {
+                return doGetRecommendations(spotifyId);
+            }
+            catch (HttpClientErrorException.Unauthorized retryEx) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                        "Spotify authentication failed after token refresh");
+            }
+        }
+    }
+
+    private List<SpotifyTrack> doGetRecommendations(String spotifyId) {
+        if (accessToken == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Spotify not configured");
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
+                RECOMMENDATIONS_URL, HttpMethod.GET, new HttpEntity<>(headers), JsonNode.class, spotifyId);
+
+        JsonNode body = response.getBody();
+        List<SpotifyTrack> tracks = new ArrayList<>();
+        if (body == null) return tracks;
+        // Recommendations API returns {"tracks": [...]} — direct array, unlike search's {"tracks": {"items": [...]}}
+        for (JsonNode item : body.path("tracks")) {
+            tracks.add(new SpotifyTrack(
+                    item.path("id").textValue(),
+                    item.path("name").textValue(),
+                    item.path("artists").path(0).path("name").textValue(),
+                    item.path("album").path("name").textValue(),
+                    item.path("album").path("images").path(0).path("url").textValue(),
+                    item.path("duration_ms").asInt()
+            ));
+        }
+        return tracks;
     }
 
     private List<SpotifyTrack> doSearch(String query) {

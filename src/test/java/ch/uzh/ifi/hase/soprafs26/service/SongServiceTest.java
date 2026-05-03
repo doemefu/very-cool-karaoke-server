@@ -245,4 +245,60 @@ class SongServiceTest {
         verify(songWebSocketPublisher).broadcastCurrentSong(eq(3L), isNull());
         verify(songWebSocketPublisher).broadcastQueue(eq(3L), argThat(List::isEmpty));
     }
+
+    @Test
+    void getRecommendationsForSong_returnsTracksWithLyrics() {
+        SpotifyTrack rec1 = new SpotifyTrack("rec1", "Waterloo", "ABBA", "Waterloo", "http://img/w.jpg", 170000);
+        SpotifyTrack rec2 = new SpotifyTrack("rec2", "SOS", "ABBA", "ABBA Gold", "http://img/s.jpg", 200000);
+        when(spotifyService.getRecommendations("seed1")).thenReturn(List.of(rec1, rec2));
+        when(lyricsService.fetchLyrics("ABBA", "Waterloo")).thenReturn("My my at Waterloo...");
+        when(lyricsService.fetchLyrics("ABBA", "SOS")).thenReturn("Where are those happy days...");
+
+        List<SongSearchResultDTO> result = songService.getRecommendationsForSong("seed1");
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().allMatch(SongSearchResultDTO::getLyricsAvailable));
+        assertEquals("rec1", result.get(0).getSpotifyId());
+        assertEquals("rec2", result.get(1).getSpotifyId());
+    }
+
+    @Test
+    void getRecommendationsForSong_filtersOutTracksWithNoLyrics() {
+        SpotifyTrack rec1 = new SpotifyTrack("rec1", "Waterloo", "ABBA", "Waterloo", "http://img/w.jpg", 170000);
+        SpotifyTrack rec2 = new SpotifyTrack("rec2", "Unknown", "Mystery", null, "http://img/u.jpg", 180000);
+        when(spotifyService.getRecommendations("seed2")).thenReturn(List.of(rec1, rec2));
+        when(lyricsService.fetchLyrics("ABBA", "Waterloo")).thenReturn("My my at Waterloo...");
+        when(lyricsService.fetchLyrics("Mystery", "Unknown")).thenReturn(null);
+
+        List<SongSearchResultDTO> result = songService.getRecommendationsForSong("seed2");
+
+        assertEquals(1, result.size());
+        assertEquals("rec1", result.get(0).getSpotifyId());
+        assertTrue(result.get(0).getLyricsAvailable());
+    }
+
+    @Test
+    void getRecommendationsForSong_noLyricsForAny_throwsNotFound() {
+        SpotifyTrack rec = new SpotifyTrack("rec1", "Mystery", "Unknown", null, "http://img/u.jpg", 180000);
+        when(spotifyService.getRecommendations("seed3")).thenReturn(List.of(rec));
+        when(lyricsService.fetchLyrics(any(), any())).thenReturn(null);
+
+        var ex = assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> songService.getRecommendationsForSong("seed3"));
+        assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+    @Test
+    void getRecommendationsForSong_limitsToFiveResults() {
+        List<SpotifyTrack> recs = java.util.stream.IntStream.range(0, 8)
+                .mapToObj(i -> new SpotifyTrack("rec" + i, "Song" + i, "Artist", null, "http://img.jpg", 180000))
+                .toList();
+        when(spotifyService.getRecommendations("seedMany")).thenReturn(recs);
+        when(lyricsService.fetchLyrics(any(), any())).thenReturn("lyrics here");
+
+        List<SongSearchResultDTO> result = songService.getRecommendationsForSong("seedMany");
+
+        assertTrue(result.size() <= 5);
+        assertTrue(result.stream().allMatch(SongSearchResultDTO::getLyricsAvailable));
+    }
 }
