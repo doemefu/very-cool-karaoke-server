@@ -33,19 +33,21 @@ public class SongService {
     private final SessionService sessionService;
     private final SongWebSocketPublisher songWebSocketPublisher;
     private final VotingService votingService;
+    private final UserService userService;
 
     private final Map<String, Optional<String>> lyricsCache = new ConcurrentHashMap<>();
 
     public SongService(SpotifyService spotifyService, LyricsService lyricsService,
                        SongRepository songRepository, SessionService sessionService,
                        SongWebSocketPublisher songWebSocketPublisher,
-                       VotingService votingService) {
+                       VotingService votingService, UserService userService) {
         this.spotifyService = spotifyService;
         this.lyricsService = lyricsService;
         this.songRepository = songRepository;
         this.sessionService = sessionService;
         this.songWebSocketPublisher = songWebSocketPublisher;
         this.votingService = votingService;
+        this.userService = userService;
     }
 
     /**
@@ -147,7 +149,7 @@ public class SongService {
     }
 
     @Transactional
-    public SongGetDTO addToQueue(Long sessionId, SongPostDTO dto) {
+    public SongGetDTO addToQueue(Long sessionId, SongPostDTO dto, String token) {
         Session session = sessionService.getSessionById(sessionId); // throws 404
 
         Song song = new Song();
@@ -159,6 +161,7 @@ public class SongService {
         song.setDurationMs(dto.getDurationMs());
         song.setLyrics(getCachedLyrics(dto.getSpotifyId())); // nullable
         song.setSession(session);
+        song.setAddedBy(userService.getUserByToken(token));
         song = songRepository.save(song);
 
         session.addSong(song); // update in-memory list for broadcast

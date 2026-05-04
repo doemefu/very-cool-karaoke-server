@@ -84,7 +84,7 @@ class SongsControllerTest {
         response.setArtist("ABBA");
         response.setSpotifyId("track123");
 
-        given(songService.addToQueue(eq(42L), any())).willReturn(response);
+        given(songService.addToQueue(eq(42L), any(), any())).willReturn(response);
 
         mockMvc.perform(post("/sessions/42/songs")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -98,7 +98,7 @@ class SongsControllerTest {
 
     @Test
     void addSongToQueue_sessionNotFound_returns404() throws Exception {
-        given(songService.addToQueue(eq(99L), any()))
+        given(songService.addToQueue(eq(99L), any(), any()))
                 .willThrow(new ResponseStatusException(NOT_FOUND, "Session not found"));
 
         mockMvc.perform(post("/sessions/99/songs")

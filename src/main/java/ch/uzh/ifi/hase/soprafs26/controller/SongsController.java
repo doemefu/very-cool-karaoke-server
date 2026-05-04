@@ -47,7 +47,8 @@ public class SongsController implements SongsApi {
     // Returns 201 + SongGetDTO, 404 if session not found
     @Override
     public ResponseEntity<SongGetDTO> sessionsSessionIdSongsPost(Long sessionId, SongPostDTO songPostDTO) {
-        SongGetDTO result = songService.addToQueue(sessionId, songPostDTO);
+        String token = request.getHeader(TOKEN_HEADER);
+        SongGetDTO result = songService.addToQueue(sessionId, songPostDTO, token);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
