@@ -6,7 +6,10 @@ import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository("votingRoundRepository")
 public interface VotingRoundRepository extends JpaRepository<VotingRound, Long> {
     boolean existsBySessionAndStatus(Session session, VotingStatus status);
+    List<VotingRound> findBySessionAndStatus(Session session, VotingStatus status);
 }

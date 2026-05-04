@@ -71,7 +71,7 @@ public class Session {
 
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("id ASC")
+    @OrderColumn(name = "position")
     private List<Song> playlist = new ArrayList<>();
 
 
