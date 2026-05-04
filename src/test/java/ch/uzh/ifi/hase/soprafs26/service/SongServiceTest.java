@@ -21,6 +21,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.times;
 
 class SongServiceTest {
 
@@ -38,6 +39,9 @@ class SongServiceTest {
 
     @Mock
     private SongWebSocketPublisher songWebSocketPublisher;
+
+    @Mock
+    private VotingService votingService;
 
     @InjectMocks
     private SongService songService;
@@ -175,77 +179,56 @@ class SongServiceTest {
     }
 
     @Test
-    void nextSong_advancesToNextUnperformedSong() {
+    void nextSong_withMultipleUnplayedSongs_startsVotingRound() {
         Session session = new Session();
+        session.setId(1L);
 
-        Song first = new Song();
-        first.setId(1L);
-        first.setSpotifyId("s1");
-        first.setTitle("First");
-        first.setArtist("Artist");
-        first.setDurationMs(180000);
-        first.setPerformed(false);
-        first.setSession(session);
-
-        Song second = new Song();
-        second.setId(2L);
-        second.setSpotifyId("s2");
-        second.setTitle("Second");
-        second.setArtist("Artist");
-        second.setDurationMs(200000);
-        second.setPerformed(false);
-        second.setSession(session);
-
-        session.getPlaylist().add(first);
-        session.getPlaylist().add(second);
+        Song song1 = new Song(); song1.setPerformed(false);
+        Song song2 = new Song(); song2.setPerformed(false);
+        session.getPlaylist().addAll(List.of(song1, song2));
 
         when(sessionService.getSessionById(1L)).thenReturn(session);
-        when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
 
         songService.nextSong(1L);
 
-        assertTrue(first.getPerformed(), "first song should be marked performed");
-        assertFalse(second.getPerformed(), "second song should still be unperformed");
-
-        verify(songWebSocketPublisher).broadcastCurrentSong(eq(1L),
-                argThat(dto -> dto != null && "Second".equals(dto.getTitle())));
-        verify(songWebSocketPublisher).broadcastQueue(eq(1L),
-                argThat(queue -> queue.size() == 1 && "Second".equals(queue.get(0).getTitle())));
+        verify(votingService, times(1)).createVotingRound(1L);
+        verify(songWebSocketPublisher, never()).broadcastCurrentSong(anyLong(), any());
     }
 
     @Test
-    void nextSong_lastSong_broadcastsNullCurrentSong() {
+    void nextSong_withOneUnplayedSong_skipsVotingAndPlaysSong() {
         Session session = new Session();
+        session.setId(2L);
 
-        Song only = new Song();
-        only.setId(3L);
-        only.setSpotifyId("s3");
-        only.setTitle("Last");
-        only.setArtist("Artist");
-        only.setDurationMs(200000);
-        only.setPerformed(false);
-        only.setSession(session);
-
-        session.getPlaylist().add(only);
+        Song lastSong = new Song();
+        lastSong.setId(99L);
+        lastSong.setPerformed(false);
+        session.getPlaylist().add(lastSong);
 
         when(sessionService.getSessionById(2L)).thenReturn(session);
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
 
         songService.nextSong(2L);
 
-        assertTrue(only.getPerformed());
-        verify(songWebSocketPublisher).broadcastCurrentSong(eq(2L), isNull());
-        verify(songWebSocketPublisher).broadcastQueue(eq(2L), argThat(List::isEmpty));
+        verify(votingService, never()).createVotingRound(anyLong());
+
+        assertTrue(lastSong.getPerformed(), "The final song should be marked as performed");
+        verify(songRepository, times(1)).save(lastSong);
+        verify(songWebSocketPublisher, times(1)).broadcastCurrentSong(eq(2L), any(SongGetDTO.class));
     }
 
     @Test
     void nextSong_emptyPlaylist_broadcastsNullWithoutError() {
-        Session session = new Session(); // empty playlist
+        Session session = new Session();
+        session.setId(3L);
+
         when(sessionService.getSessionById(3L)).thenReturn(session);
 
         songService.nextSong(3L);
 
+        verify(votingService, never()).createVotingRound(anyLong());
         verify(songRepository, never()).save(any());
+
         verify(songWebSocketPublisher).broadcastCurrentSong(eq(3L), isNull());
         verify(songWebSocketPublisher).broadcastQueue(eq(3L), argThat(List::isEmpty));
     }
