@@ -154,5 +154,19 @@ public class SessionsController implements SessionsApi {
         return ResponseEntity.noContent().build();
     }
 
-    // All other SessionsApi endpoints remain NOT_IMPLEMENTED until you override them here
+    /**
+     * GET /sessions/{sessionId}/review
+     * <p>
+     * Returns the list of performed songs for a completed session.
+     *
+     * @param sessionId target session (path variable)
+     * @return 200 + List<SongGetDTO> of performed songs in play order
+     */
+    @Override
+    public ResponseEntity<List<SongGetDTO>> sessionsSessionIdReviewGet(Long sessionId) {
+        List<SongGetDTO> review = sessionService.getSessionReview(sessionId);
+        return ResponseEntity.ok(review);
+    }
+
+    // All other SessionsApi endpoints remain NOT_IMPLEMENTED until you override them her
 }
