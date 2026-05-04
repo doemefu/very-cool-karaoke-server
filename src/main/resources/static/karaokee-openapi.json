@@ -465,6 +465,42 @@
         }
       }
     },
+    "/songs/{spotifyId}/recommendations": {
+      "get": {
+        "tags": [
+          "Songs"
+        ],
+        "summary": "Get song recommendations with lyrics for a seed track (S68/S69)",
+        "parameters": [
+          {
+            "name": "spotifyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recommendations with lyrics available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SongSearchResultDTO"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No recommendations with lyrics found for the given spotifyId"
+          }
+        }
+      }
+    },
     "/songs/search": {
       "get": {
         "tags": [

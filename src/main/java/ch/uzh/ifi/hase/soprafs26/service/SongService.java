@@ -128,12 +128,13 @@ public class SongService {
         int lyricsCount = 0;
         int attempts = 0;
         while (lyricsCount < minWithLyrics && attempts < 3) {
-            List<SpotifyTrack> batch = spotifyService.getRecommendations(seedTrackId);
+            List<SpotifyTrack> batch = spotifyService.getRecommendations(seedTrackId).stream()
+                    .filter(t -> !seenIds.contains(t.spotifyId()))
+                    .toList();
             for (SongSearchResultDTO dto : checkLyricsAndBuildDtos(batch)) {
-                if (seenIds.add(dto.getSpotifyId())) {
-                    collected.add(dto);
-                    if (Boolean.TRUE.equals(dto.getLyricsAvailable())) lyricsCount++;
-                }
+                seenIds.add(dto.getSpotifyId());
+                collected.add(dto);
+                if (Boolean.TRUE.equals(dto.getLyricsAvailable())) lyricsCount++;
             }
             attempts++;
         }
