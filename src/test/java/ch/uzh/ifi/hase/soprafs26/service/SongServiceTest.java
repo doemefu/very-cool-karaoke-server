@@ -47,6 +47,9 @@ class SongServiceTest {
     @Mock
     private VotingService votingService;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private SongService songService;
 
@@ -120,13 +123,14 @@ class SongServiceTest {
         songService.cacheLyrics("track123", "Here I go again...");
 
         when(sessionService.getSessionById(1L)).thenReturn(session);
+        when(userService.getUserByToken(any())).thenReturn(new User());
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> {
             Song s = inv.getArgument(0);
             s.setId(10L);
             return s;
         });
 
-        SongGetDTO result = songService.addToQueue(1L, dto);
+        SongGetDTO result = songService.addToQueue(1L, dto, "test-token");
 
         verify(songRepository).save(any(Song.class));
         verify(songWebSocketPublisher).broadcastQueue(eq(1L), anyList());
@@ -141,9 +145,10 @@ class SongServiceTest {
         SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown", 180000);
 
         when(sessionService.getSessionById(2L)).thenReturn(session);
+        when(userService.getUserByToken(any())).thenReturn(new User());
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SongGetDTO result = songService.addToQueue(2L, dto);
+        SongGetDTO result = songService.addToQueue(2L, dto, "test-token");
 
         assertNull(result.getLyrics());
         verify(songWebSocketPublisher).broadcastQueue(eq(2L), anyList());
