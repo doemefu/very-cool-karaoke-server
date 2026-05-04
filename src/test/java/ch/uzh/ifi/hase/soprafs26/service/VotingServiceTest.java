@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.context.ApplicationContext;
 
 import java.time.LocalDateTime;
 import java.time.Instant;
@@ -53,6 +54,9 @@ class VotingServiceTest {
 
     @InjectMocks
     private VotingService votingService;
+
+    @Mock
+    private ApplicationContext applicationContext;
 
     private Session session;
     private User voter;
@@ -102,6 +106,8 @@ class VotingServiceTest {
         votingRound.setStartsAt(LocalDateTime.now());
         votingRound.setEndsAt(LocalDateTime.now().plusSeconds(30));
         votingRound.getCandidates().add(candidateSong);
+
+        lenient().when(applicationContext.getBean(VotingService.class)).thenReturn(votingService);
     }
 
 
@@ -358,7 +364,7 @@ class VotingServiceTest {
 
         votingRound.getCandidates().add(nonCandidateSong);
 
-        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(votingRoundRepository.findByIdWithCandidates(50L)).thenReturn(Optional.of(votingRound));
         when(sessionService.getSessionById(10L)).thenReturn(session);
 
         VoteRepository.SongVoteCount winnerCount = mock(VoteRepository.SongVoteCount.class);
@@ -377,7 +383,7 @@ class VotingServiceTest {
     @Test
     void finishVotingRound_alreadyClosed_doesNothing() {
         votingRound.setStatus(VotingStatus.CLOSED);
-        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(votingRoundRepository.findByIdWithCandidates(50L)).thenReturn(Optional.of(votingRound));
 
         votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
 

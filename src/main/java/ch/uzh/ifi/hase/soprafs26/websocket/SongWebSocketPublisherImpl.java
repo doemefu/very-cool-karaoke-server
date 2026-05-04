@@ -24,7 +24,13 @@ public class SongWebSocketPublisherImpl implements SongWebSocketPublisher {
 
     @Override
     public void broadcastCurrentSong(Long sessionId, SongGetDTO currentSong) {
-        messagingTemplate.convertAndSend(TOPIC_PREFIX + sessionId + "/currentSong", currentSong);
+        String destination = TOPIC_PREFIX + sessionId + "/currentSong";
+
+        if (currentSong == null) {
+            messagingTemplate.convertAndSend(destination, "null");
+        } else {
+            messagingTemplate.convertAndSend(destination, currentSong);
+        }
     }
 
     @Override

@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.scheduling.TaskScheduler;
-import java.time.Instant;
+import org.springframework.context.ApplicationContext;
+
+import java.time.ZoneOffset;
 import java.util.*;
 
 import java.time.LocalDateTime;
@@ -32,11 +34,13 @@ public class VotingService {
     private final VotingWebSocketPublisher votingWebSocketPublisher;
     private final Random random = new Random();
     private final TaskScheduler taskScheduler;
+    private final ApplicationContext applicationContext;
 
     public VotingService(VotingRoundRepository votingRoundRepository,
                          SongRepository songRepository, VoteRepository voteRepository,
                          SessionService sessionService, @Lazy SongService songService,
                          VotingWebSocketPublisher votingWebSocketPublisher,
+                         ApplicationContext applicationContext,
                          TaskScheduler taskScheduler) {
         this.votingRoundRepository = votingRoundRepository;
         this.songRepository = songRepository;
@@ -45,6 +49,7 @@ public class VotingService {
         this.songService = songService;
         this.votingWebSocketPublisher = votingWebSocketPublisher;
         this.taskScheduler = taskScheduler;
+        this.applicationContext = applicationContext;
     }
 
     @Transactional
@@ -124,10 +129,13 @@ public class VotingService {
             return;
         }
 
+        LocalDateTime startsAt = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime endsAt = startsAt.plusSeconds(30);
         VotingRound round = new VotingRound();
         round.setSession(session);
         round.setStatus(VotingStatus.OPEN);
-        round.setStartsAt(LocalDateTime.now());
+        round.setStartsAt(startsAt);
+        round.setEndsAt(endsAt);
         round.setCandidates(playlist);
         VotingRound savedRound = votingRoundRepository.save(round);
 
@@ -135,9 +143,10 @@ public class VotingService {
         VotingRoundGetDTO roundDTO = DTOMapper.INSTANCE.toVotingRoundGetDTO(savedRound, counts);
         votingWebSocketPublisher.broadcastVotingRound(sessionId, roundDTO);
 
+        VotingService self = applicationContext.getBean(VotingService.class);
         taskScheduler.schedule(
-                () -> finishVotingRoundAndPlayNextSong(sessionId, savedRound.getId()),
-                Instant.now().plusSeconds(30)
+                () -> self.finishVotingRoundAndPlayNextSong(sessionId, savedRound.getId()),
+                endsAt.toInstant(ZoneOffset.UTC)
         );
     }
 
@@ -172,13 +181,17 @@ public class VotingService {
 
     @Transactional
     public void finishVotingRoundAndPlayNextSong(Long sessionId, Long votingRoundId) {
-        VotingRound round = votingRoundRepository.findById(votingRoundId).orElse(null);
+        VotingRound round = votingRoundRepository.findByIdWithCandidates(votingRoundId).orElse(null);
         if (round == null || round.getStatus() == VotingStatus.CLOSED) {
             return;
         }
 
         round.setStatus(VotingStatus.CLOSED);
+        round.setEndsAt(LocalDateTime.now());
         votingRoundRepository.save(round);
+
+        Map<Long, Long> finalCounts = getVoteCounts(round);
+        votingWebSocketPublisher.broadcastVotingRound(sessionId, DTOMapper.INSTANCE.toVotingRoundGetDTO(round, finalCounts));
 
         Map<Long, Long> counts = getVoteCounts(round);
         long maxVotes = counts.values().stream().max(Long::compare).orElse(0L);
