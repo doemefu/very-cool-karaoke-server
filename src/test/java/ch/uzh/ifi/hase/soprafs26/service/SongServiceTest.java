@@ -352,6 +352,7 @@ class SongServiceTest {
                 () -> songService.deleteSongFromQueue(1L, 99L, "test-token")
         );
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    }
     void getRecommendationsForSong_returnsTracksWithLyrics() {
         SpotifyTrack rec1 = new SpotifyTrack("rec1", "Waterloo", "ABBA", "Waterloo", "http://img/w.jpg", 170000);
         SpotifyTrack rec2 = new SpotifyTrack("rec2", "SOS", "ABBA", "ABBA Gold", "http://img/s.jpg", 200000);

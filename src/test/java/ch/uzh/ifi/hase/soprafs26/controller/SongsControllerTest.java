@@ -165,6 +165,9 @@ class SongsControllerTest {
 
         mockMvc.perform(delete("/sessions/42/songs/7")
                         .header("token", "admin-token"))
+                .andExpect(status().isNotFound());
+    }
+
     void songsSpotifyIdRecommendationsGet_returnsRecommendations() throws Exception {
         SongSearchResultDTO rec = new SongSearchResultDTO();
         rec.setSpotifyId("rec1");
