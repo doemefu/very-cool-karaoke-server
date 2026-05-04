@@ -168,5 +168,5 @@ public class SessionsController implements SessionsApi {
         return ResponseEntity.ok(review);
     }
 
-    // All other SessionsApi endpoints remain NOT_IMPLEMENTED until you override them her
+    // All other SessionsApi endpoints remain NOT_IMPLEMENTED until you override them here
 }
