@@ -138,4 +138,47 @@ class SpotifyServiceTest {
 
         assertTrue(results.isEmpty());
     }
+
+    @Test
+    void getRecommendations_validSeedTrack_returnsMappedTracks() {
+        String recsResponse = """
+                {
+                  "tracks": [{
+                    "id": "rec123",
+                    "name": "Waterloo",
+                    "artists": [{"name": "ABBA"}],
+                    "album": {"name": "Waterloo", "images": [{"url": "http://img.test/waterloo.jpg"}]},
+                    "duration_ms": 170000
+                  }]
+                }
+                """;
+        mockServer.expect(requestTo(Matchers.containsString("/v1/recommendations")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(recsResponse, MediaType.APPLICATION_JSON));
+
+        List<SpotifyTrack> result = spotifyService.getRecommendations("seedId123");
+
+        assertEquals(1, result.size());
+        SpotifyTrack track = result.get(0);
+        assertEquals("rec123", track.spotifyId());
+        assertEquals("Waterloo", track.title());
+        assertEquals("ABBA", track.artist());
+        assertEquals("Waterloo", track.albumName());
+        assertEquals("http://img.test/waterloo.jpg", track.albumArt());
+        assertEquals(170000, track.durationMs());
+    }
+
+    @Test
+    void getRecommendations_emptyResponse_returnsEmptyList() {
+        String recsResponse = """
+                {"tracks": []}
+                """;
+        mockServer.expect(requestTo(Matchers.containsString("/v1/recommendations")))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(recsResponse, MediaType.APPLICATION_JSON));
+
+        List<SpotifyTrack> result = spotifyService.getRecommendations("seedId456");
+
+        assertTrue(result.isEmpty());
+    }
 }

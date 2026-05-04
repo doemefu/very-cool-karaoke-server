@@ -144,7 +144,14 @@ public class VotingService {
     private void moveWinnerToFrontOfQueue(long sessionId, Song winner) {
         Session session = sessionService.getSessionById(sessionId);
         List<Song> playlist = session.getPlaylist();
-        int indexOfWinner = playlist.indexOf(winner);
+        Long winnerId = winner.getId();
+        int indexOfWinner = -1;
+        for (int i = 0; i < playlist.size(); i++) {
+            if (Objects.equals(playlist.get(i).getId(), winnerId)) {
+                indexOfWinner = i;
+                break;
+            }
+        }
         if (indexOfWinner == -1) {
             return;
         }

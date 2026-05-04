@@ -19,7 +19,7 @@ public enum ReactionType {
 
     LAUGH("LAUGH"),
 
-    SKULL("SKULL");
+    PARTY_POPPER("PARTY_POPPER");
 
     private final String value;
 

@@ -247,4 +247,30 @@ public class SessionService {
         log.debug("User {} fulfilled initial song requirement for session {}",
                 userId, sessionId);
     }
+
+
+    /**
+     * Returns the list of performed songs for a completed session (review screen).
+     * Songs are ordered by id (which corresponds to play order)
+     *
+     * @param sessionId the session to review
+     * @return list of performed songs as DTOs
+     * @throws ResponseStatusException 404 if session not found, 403 if not ENDED
+     */
+    @Transactional(readOnly = true)
+    public List<SongGetDTO> getSessionReview(Long sessionId) {
+        Session session = getSessionById(sessionId);
+
+        if (session.getStatus() != SessionStatus.ENDED) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Session has not ended yet");
+        }
+
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        return session.getPlaylist().stream()
+                .filter(s -> Boolean.TRUE.equals(s.getPerformed()))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
+    }
 }
