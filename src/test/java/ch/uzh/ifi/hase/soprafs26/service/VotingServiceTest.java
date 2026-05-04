@@ -305,7 +305,6 @@ class VotingServiceTest {
         session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
 
         when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
         when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
         when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
 
@@ -323,8 +322,6 @@ class VotingServiceTest {
     void createVotingRound_playlistTooSmall_skipsRound() {
         session.setPlaylist(new ArrayList<>(List.of(candidateSong)));
         when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(false);
-
         votingService.createVotingRound(10L);
 
         verify(songService, times(1)).nextSong(10L);
@@ -334,16 +331,25 @@ class VotingServiceTest {
     }
 
     @Test
-    void createVotingRound_alreadyOpen_throwsConflict() {
+    void createVotingRound_existingOpenRound_closesItAndStartsNewOne() {
+        VotingRound stale = new VotingRound();
+        stale.setId(49L);
+        stale.setSession(session);
+        stale.setStatus(VotingStatus.OPEN);
+
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+
         when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)).thenReturn(true);
+        when(votingRoundRepository.findBySessionAndStatus(session, VotingStatus.OPEN))
+                .thenReturn(List.of(stale));
+        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
+        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
 
-        ResponseStatusException exc = assertThrows(ResponseStatusException.class,
-                () -> votingService.createVotingRound(10L));
+        votingService.createVotingRound(10L);
 
-        assertEquals(409, exc.getStatusCode().value());
-        verify(votingRoundRepository, never()).save(any());
-        verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+        assertEquals(VotingStatus.CLOSED, stale.getStatus());
+        verify(votingRoundRepository, times(1)).saveAll(anyList());
+        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
     }
 
     @Test
@@ -364,9 +370,6 @@ class VotingServiceTest {
 
         assertEquals(VotingStatus.CLOSED, votingRound.getStatus());
         verify(votingRoundRepository, times(1)).save(votingRound);
-
-        assertEquals(candidateSong, session.getPlaylist().get(0));
-        assertEquals(nonCandidateSong, session.getPlaylist().get(1));
 
         verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
     }

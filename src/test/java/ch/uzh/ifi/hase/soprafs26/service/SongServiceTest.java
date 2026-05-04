@@ -179,9 +179,10 @@ class SongServiceTest {
         Session session = new Session();
         session.setId(1L);
 
+        Song current = new Song(); current.setPerformed(false);
         Song song1 = new Song(); song1.setPerformed(false);
         Song song2 = new Song(); song2.setPerformed(false);
-        session.getPlaylist().addAll(List.of(song1, song2));
+        session.getPlaylist().addAll(List.of(current, song1, song2));
 
         when(sessionService.getSessionById(1L)).thenReturn(session);
 
@@ -196,10 +197,13 @@ class SongServiceTest {
         Session session = new Session();
         session.setId(2L);
 
+        Song current = new Song();
+        current.setId(98L);
+        current.setPerformed(false);
         Song lastSong = new Song();
         lastSong.setId(99L);
         lastSong.setPerformed(false);
-        session.getPlaylist().add(lastSong);
+        session.getPlaylist().addAll(List.of(current, lastSong));
 
         when(sessionService.getSessionById(2L)).thenReturn(session);
         when(songRepository.save(any(Song.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -207,9 +211,6 @@ class SongServiceTest {
         songService.nextSong(2L);
 
         verify(votingService, never()).createVotingRound(anyLong());
-
-        assertTrue(lastSong.getPerformed(), "The final song should be marked as performed");
-        verify(songRepository, times(1)).save(lastSong);
         verify(songWebSocketPublisher, times(1)).broadcastCurrentSong(eq(2L), any(SongGetDTO.class));
     }
 
@@ -218,12 +219,17 @@ class SongServiceTest {
         Session session = new Session();
         session.setId(3L);
 
+        Song current = new Song();
+        current.setId(97L);
+        current.setPerformed(false);
+        session.getPlaylist().add(current);
+
         when(sessionService.getSessionById(3L)).thenReturn(session);
 
         songService.nextSong(3L);
 
         verify(votingService, never()).createVotingRound(anyLong());
-        verify(songRepository, never()).save(any());
+        verify(songRepository, times(1)).save(current);
 
         verify(songWebSocketPublisher).broadcastCurrentSong(eq(3L), isNull());
         verify(songWebSocketPublisher).broadcastQueue(eq(3L), argThat(List::isEmpty));

@@ -106,9 +106,13 @@ public class VotingService {
     public void createVotingRound(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
 
-        if (votingRoundRepository.existsBySessionAndStatus(session, VotingStatus.OPEN)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "An open voting round already exists for this session");
+        List<VotingRound> openRounds = votingRoundRepository.findBySessionAndStatus(session, VotingStatus.OPEN);
+        for (VotingRound stale : openRounds) {
+            stale.setStatus(VotingStatus.CLOSED);
+            stale.setEndsAt(LocalDateTime.now());
+        }
+        if (!openRounds.isEmpty()) {
+            votingRoundRepository.saveAll(openRounds);
         }
 
         List<Song> playlist = session.getPlaylist().stream()

@@ -150,6 +150,14 @@ public class SongService {
         Session session = sessionService.getSessionById(sessionId);
         Map<Long, Long> emptyVotes = Collections.emptyMap();
 
+        session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .ifPresent(current -> {
+                    current.setPerformed(true);
+                    songRepository.save(current);
+                });
+
         List<Song> unplayedSongs = session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .toList();
@@ -158,8 +166,6 @@ public class SongService {
             votingService.createVotingRound(sessionId);
         } else if (unplayedSongs.size() == 1) {
             Song lastSong = unplayedSongs.get(0);
-            lastSong.setPerformed(true);
-            songRepository.save(lastSong);
             SongGetDTO nextSongDTO = DTOMapper.INSTANCE.toSongGetDTO(lastSong, emptyVotes);
             songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSongDTO);
             songWebSocketPublisher.broadcastQueue(sessionId, Collections.emptyList());
