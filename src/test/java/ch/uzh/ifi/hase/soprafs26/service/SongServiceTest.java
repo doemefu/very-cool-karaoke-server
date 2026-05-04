@@ -223,7 +223,7 @@ class SongServiceTest {
     }
 
     @Test
-    void nextSong_emptyPlaylist_broadcastsNullWithoutError() {
+    void nextSong_withSingleSong_marksPerformedAndBroadcastsNull() {
         Session session = new Session();
         session.setId(3L);
 
