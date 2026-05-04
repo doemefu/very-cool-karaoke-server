@@ -8,13 +8,18 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
@@ -47,35 +52,99 @@ public class SongService {
     /**
      * Searches Spotify for tracks matching the query, checks lyrics availability
      * for all results in parallel, caches the lyrics, and returns the result list.
+     * If ALL results have no lyrics, triggers a recommendations fallback: keeps
+     * the first result at position 0 (to signal unavailability) and fills
+     * positions 1–3 with up to 3 recommendations that have lyrics.
      */
     public List<SongSearchResultDTO> search(String query) {
         List<SpotifyTrack> tracks = spotifyService.search(query);
+        List<SongSearchResultDTO> results = checkLyricsAndBuildDtos(tracks);
 
-        // Fan out lyrics checks in parallel
-        List<CompletableFuture<String>> lyricsFutures = tracks.stream()
-                .map(track -> CompletableFuture.supplyAsync(
-                        () -> lyricsService.fetchLyrics(track.artist(), track.title())))
+        boolean noneHaveLyrics = results.stream().noneMatch(SongSearchResultDTO::getLyricsAvailable);
+        if (noneHaveLyrics && !results.isEmpty()) {
+            SongSearchResultDTO firstResult = results.get(0);
+            // Fetch recommendations with lyrics; if none found, degraded response is [firstResult] only
+            List<SongSearchResultDTO> recommendations =
+                    fetchRecommendationsWithMinLyrics(firstResult.getSpotifyId(), 2, 3);
+            List<SongSearchResultDTO> combined = new ArrayList<>();
+            combined.add(firstResult);
+            combined.addAll(recommendations);
+            return combined;
+        }
+        return results;
+    }
+
+    /**
+     * Fans out lyrics checks in parallel for each track, caches results,
+     * and builds SongSearchResultDTOs. Shared by search() and getRecommendationsForSong().
+     */
+    private List<SongSearchResultDTO> checkLyricsAndBuildDtos(List<SpotifyTrack> tracks) {
+        List<CompletableFuture<String>> futures = tracks.stream()
+                .map(t -> CompletableFuture.supplyAsync(
+                        () -> lyricsService.fetchLyrics(t.artist(), t.title())))
                 .toList();
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        CompletableFuture.allOf(lyricsFutures.toArray(new CompletableFuture[0])).join();
-
-        // Build DTOs and populate cache
         return IntStream.range(0, tracks.size()).mapToObj(i -> {
-            SpotifyTrack track = tracks.get(i);
-            String lyrics = lyricsFutures.get(i).join();
-            lyricsCache.put(track.spotifyId(), Optional.ofNullable(lyrics));
+            SpotifyTrack t = tracks.get(i);
+            String lyrics = futures.get(i).join();
+            lyricsCache.put(t.spotifyId(), Optional.ofNullable(lyrics));
 
             SongSearchResultDTO dto = new SongSearchResultDTO();
-            dto.setSpotifyId(track.spotifyId());
-            dto.setTitle(track.title());
-            dto.setArtist(track.artist());
-            dto.setAlbumName(track.albumName());
-            dto.setAlbumArt(track.albumArt());
-            dto.setDurationMs(track.durationMs());
-            dto.setDurationSeconds(track.durationMs() / 1000);
+            dto.setSpotifyId(t.spotifyId());
+            dto.setTitle(t.title());
+            dto.setArtist(t.artist());
+            dto.setAlbumName(t.albumName());
+            dto.setAlbumArt(t.albumArt());
+            dto.setDurationMs(t.durationMs());
+            dto.setDurationSeconds(t.durationMs() / 1000);
             dto.setLyricsAvailable(lyrics != null);
             return dto;
         }).toList();
+    }
+
+    /**
+     * Returns up to 5 Spotify recommendations for the given seed track that have lyrics available.
+     * Throws 404 if no recommendations with lyrics are found.
+     */
+    public List<SongSearchResultDTO> getRecommendationsForSong(String spotifyId) {
+        List<SpotifyTrack> tracks = spotifyService.getRecommendations(spotifyId);
+        List<SongSearchResultDTO> withLyrics = checkLyricsAndBuildDtos(tracks).stream()
+                .filter(SongSearchResultDTO::getLyricsAvailable)
+                .limit(5)
+                .toList();
+        if (withLyrics.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "No recommendations with lyrics found for spotifyId: " + spotifyId);
+        }
+        return withLyrics;
+    }
+
+    /**
+     * Iteratively fetches recommendations (up to 3 rounds of up to 10 each) until
+     * at least {@code minWithLyrics} results with lyrics are collected, deduplicating
+     * across rounds. Returns only results with lyrics, limited to {@code maxResults}.
+     */
+    private List<SongSearchResultDTO> fetchRecommendationsWithMinLyrics(String seedTrackId, int minWithLyrics, int maxResults) {
+        List<SongSearchResultDTO> collected = new ArrayList<>();
+        Set<String> seenIds = new HashSet<>();
+        int lyricsCount = 0;
+        int attempts = 0;
+        while (lyricsCount < minWithLyrics && attempts < 3) {
+            List<SpotifyTrack> batch = spotifyService.getRecommendations(seedTrackId).stream()
+                    .filter(t -> !seenIds.contains(t.spotifyId()))
+                    .toList();
+            for (SongSearchResultDTO dto : checkLyricsAndBuildDtos(batch)) {
+                seenIds.add(dto.getSpotifyId());
+                collected.add(dto);
+                if (Boolean.TRUE.equals(dto.getLyricsAvailable())) lyricsCount++;
+            }
+            attempts++;
+        }
+        return collected.stream()
+                .filter(SongSearchResultDTO::getLyricsAvailable)
+                .limit(maxResults)
+                .toList();
     }
 
     @Transactional

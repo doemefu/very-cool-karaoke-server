@@ -18,6 +18,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -112,5 +113,34 @@ class SongsControllerTest {
                         .content("{\"spotifyId\":\"track123\",\"artist\":\"ABBA\"}")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void songsSpotifyIdRecommendationsGet_returnsRecommendations() throws Exception {
+        SongSearchResultDTO rec = new SongSearchResultDTO();
+        rec.setSpotifyId("rec1");
+        rec.setTitle("Waterloo");
+        rec.setArtist("ABBA");
+        rec.setAlbumArt("http://img/w.jpg");
+        rec.setDurationMs(170000);
+        rec.setDurationSeconds(170);
+        rec.setLyricsAvailable(true);
+
+        when(songService.getRecommendationsForSong("seed123")).thenReturn(List.of(rec));
+
+        mockMvc.perform(get("/songs/seed123/recommendations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].spotifyId").value("rec1"))
+                .andExpect(jsonPath("$[0].lyricsAvailable").value(true));
+    }
+
+    @Test
+    void songsSpotifyIdRecommendationsGet_noLyricsFound_returns404() throws Exception {
+        when(songService.getRecommendationsForSong("noLyrics"))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "No recommendations with lyrics found"));
+
+        mockMvc.perform(get("/songs/noLyrics/recommendations"))
+                .andExpect(status().isNotFound());
     }
 }
