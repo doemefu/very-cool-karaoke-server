@@ -88,6 +88,10 @@ public class VotingService {
         vote.setVoter(voter);
         vote.setVotedSong(song);
         voteRepository.save(vote);
+
+        Map<Long, Long> counts = getVoteCounts(round);
+        VotingRoundGetDTO roundDTO = DTOMapper.INSTANCE.toVotingRoundGetDTO(round, counts);
+        votingWebSocketPublisher.broadcastVotingRound(sessionId, roundDTO);
     }
 
     @Transactional(readOnly = true)
