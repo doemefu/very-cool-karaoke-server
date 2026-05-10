@@ -33,8 +33,7 @@ public class VotingController implements VotingApi {
     // Returns 200 + list of VotingRoundGetDTO
     @Override
     public ResponseEntity<List<VotingRoundGetDTO>> sessionsSessionIdVotingRoundsGet(Long sessionId) {
-        // TODO: delegate to votingService.getRounds(sessionId)
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        return ResponseEntity.ok(votingService.getRoundsForSession(sessionId));
     }
 
     // GET /sessions/{sessionId}/votingRounds/{roundId} — Get a specific voting round (S14)

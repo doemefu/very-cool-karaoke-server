@@ -215,4 +215,16 @@ public class VotingService {
         moveWinnerToFrontOfQueue(sessionId, votingRoundSongWinner);
         songService.broadcastVotingRoundSongWinner(sessionId, votingRoundSongWinner);
     }
+
+    @Transactional(readOnly = true)
+    public List<VotingRoundGetDTO> getRoundsForSession(Long sessionId) {
+        Session session = sessionService.getSessionById(sessionId);
+        List<VotingRound> rounds = votingRoundRepository.findBySessionOrderByStartsAtAsc(session);
+        return rounds.stream()
+                .map(r -> {
+                    Map<Long, Long> counts = getVoteCounts(r);
+                    return DTOMapper.INSTANCE.toVotingRoundGetDTO(r, counts);
+                })
+                .toList();
+    }
 }
