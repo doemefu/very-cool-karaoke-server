@@ -120,12 +120,11 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
-        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
+        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
 
         assertDoesNotThrow(() -> votingService.castVote(10L, 50L, 100L, voter));
 
-        verify(voteRepository, times(1)).saveAndFlush(any(Vote.class));
+        verify(voteRepository, times(1)).save(any(Vote.class));
     }
 
     // Check fields correctly set in vote
@@ -135,12 +134,11 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
-        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
+        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
 
         votingService.castVote(10L, 50L, 100L, voter);
 
-        verify(voteRepository).saveAndFlush(argThat(vote ->
+        verify(voteRepository).save(argThat(vote ->
                 vote.getVotingRound().equals(votingRound) &&
                         vote.getVoter().equals(voter) &&
                         vote.getVotedSong().equals(candidateSong)
@@ -158,7 +156,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 99L, 100L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).saveAndFlush(any());
+        verify(voteRepository, never()).save(any());
     }
 
 
@@ -172,7 +170,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(999L, 50L, 100L, voter));
 
         assertEquals(400, ex.getStatusCode().value());
-        verify(voteRepository, never()).saveAndFlush(any());
+        verify(voteRepository, never()).save(any());
     }
 
 
@@ -187,7 +185,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, voter));
 
         assertEquals(410, ex.getStatusCode().value());
-        verify(voteRepository, never()).saveAndFlush(any());
+        verify(voteRepository, never()).save(any());
     }
 
 
@@ -201,7 +199,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, nonParticipant));
 
         assertEquals(403, ex.getStatusCode().value());
-        verify(voteRepository, never()).saveAndFlush(any());
+        verify(voteRepository, never()).save(any());
     }
 
 
@@ -216,7 +214,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 999L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).saveAndFlush(any());
+        verify(voteRepository, never()).save(any());
     }
 
 
@@ -393,6 +391,62 @@ class VotingServiceTest {
 
         verify(votingRoundRepository, never()).save(any());
         verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+    }
+
+    @Test
+    void getRoundsForSession_noRounds_returnsEmptyList() {
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.findBySessionOrderByStartsAtAsc(session))
+                .thenReturn(List.of());
+
+        List<VotingRoundGetDTO> result = votingService.getRoundsForSession(10L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(voteRepository, never()).countVotesPerSong(any());
+    }
+
+    @Test
+    void getRoundsForSession_multipleRounds_returnsAllOrderedWithCounts() {
+        VotingRound earlier = new VotingRound();
+        earlier.setId(40L);
+        earlier.setSession(session);
+        earlier.setStatus(VotingStatus.CLOSED);
+        earlier.setStartsAt(LocalDateTime.now().minusMinutes(5));
+        earlier.setEndsAt(LocalDateTime.now().minusMinutes(4));
+        earlier.getCandidates().add(candidateSong);
+
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.findBySessionOrderByStartsAtAsc(session))
+                .thenReturn(List.of(earlier, votingRound));
+
+        VoteRepository.SongVoteCount earlierCount = mock(VoteRepository.SongVoteCount.class);
+        when(earlierCount.getSongId()).thenReturn(100L);
+        when(earlierCount.getCount()).thenReturn(3L);
+        when(voteRepository.countVotesPerSong(earlier)).thenReturn(List.of(earlierCount));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
+
+        List<VotingRoundGetDTO> result = votingService.getRoundsForSession(10L);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(40L, result.get(0).getId());
+        assertEquals(50L, result.get(1).getId());
+        verify(voteRepository, times(1)).countVotesPerSong(earlier);
+        verify(voteRepository, times(1)).countVotesPerSong(votingRound);
+    }
+
+    @Test
+    void getRoundsForSession_sessionNotFound_throwsNotFound() {
+        when(sessionService.getSessionById(999L))
+                .thenThrow(new ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Session not found"));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> votingService.getRoundsForSession(999L));
+
+        assertEquals(404, ex.getStatusCode().value());
+        verify(votingRoundRepository, never()).findBySessionOrderByStartsAtAsc(any());
     }
 
     @Test
