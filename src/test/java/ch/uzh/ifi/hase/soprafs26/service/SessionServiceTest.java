@@ -6,6 +6,7 @@ import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
+import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,9 @@ class SessionServiceTest {
 
     @Mock
     private SongWebSocketPublisher songWebSocketPublisher;
+
+    @Mock
+    private SessionWebSocketPublisher sessionWebSocketPublisher;
 
     @InjectMocks
     private SessionService sessionService;
