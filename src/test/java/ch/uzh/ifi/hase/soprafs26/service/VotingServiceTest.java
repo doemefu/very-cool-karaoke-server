@@ -7,6 +7,7 @@ import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
 import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
