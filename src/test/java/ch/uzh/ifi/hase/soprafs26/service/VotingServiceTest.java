@@ -6,6 +6,8 @@ import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
 import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -118,11 +120,12 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
 
         assertDoesNotThrow(() -> votingService.castVote(10L, 50L, 100L, voter));
 
-        verify(voteRepository, times(1)).save(any(Vote.class));
+        verify(voteRepository, times(1)).saveAndFlush(any(Vote.class));
     }
 
     // Check fields correctly set in vote
@@ -132,11 +135,12 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
 
         votingService.castVote(10L, 50L, 100L, voter);
 
-        verify(voteRepository).save(argThat(vote ->
+        verify(voteRepository).saveAndFlush(argThat(vote ->
                 vote.getVotingRound().equals(votingRound) &&
                         vote.getVoter().equals(voter) &&
                         vote.getVotedSong().equals(candidateSong)
@@ -154,7 +158,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 99L, 100L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -168,7 +172,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(999L, 50L, 100L, voter));
 
         assertEquals(400, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -183,7 +187,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, voter));
 
         assertEquals(410, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -197,7 +201,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, nonParticipant));
 
         assertEquals(403, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -212,7 +216,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 999L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -389,5 +393,78 @@ class VotingServiceTest {
 
         verify(votingRoundRepository, never()).save(any());
         verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+    }
+
+    @Test
+    void castVote_validInput_broadcastDtoHasStartedAtAndEndsAtSet() {
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
+        when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
+
+        votingService.castVote(10L, 50L, 100L, voter);
+
+        ArgumentCaptor<VotingRoundGetDTO> dtoCaptor = ArgumentCaptor.forClass(VotingRoundGetDTO.class);
+        verify(votingWebSocketPublisher).broadcastVotingRound(eq(10L), dtoCaptor.capture());
+
+        VotingRoundGetDTO dto = dtoCaptor.getValue();
+        assertNotNull(dto.getStartedAt(), "startedAt must be mapped from entity startsAt");
+        assertNotNull(dto.getEndsAt(), "endsAt must be mapped from entity endsAt");
+        assertEquals(VotingStatus.OPEN, dto.getStatus());
+    }
+
+    @Test
+    void castVote_validInput_broadcastDtoContainsUpdatedCount() {
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
+        when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+
+        VoteRepository.SongVoteCount count = mock(VoteRepository.SongVoteCount.class);
+        when(count.getSongId()).thenReturn(100L);
+        when(count.getCount()).thenReturn(1L);
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(count));
+
+        votingService.castVote(10L, 50L, 100L, voter);
+
+        ArgumentCaptor<VotingRoundGetDTO> dtoCaptor = ArgumentCaptor.forClass(VotingRoundGetDTO.class);
+        verify(votingWebSocketPublisher).broadcastVotingRound(eq(10L), dtoCaptor.capture());
+
+        SongGetDTO votedSong = dtoCaptor.getValue().getCandidates().stream()
+                .filter(s -> s.getId().equals(100L))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(1, votedSong.getCurrentVoteCount());
+    }
+
+    @Test
+    void castVote_secondVoter_broadcastDtoShowsAggregatedCount() {
+        User secondVoter = new User();
+        secondVoter.setId(3L);
+        secondVoter.setUsername("singer2");
+        secondVoter.setToken("voter2-token");
+        session.addParticipant(secondVoter);
+
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
+        when(voteRepository.existsByVotingRoundAndVoter(votingRound, secondVoter)).thenReturn(false);
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+
+        VoteRepository.SongVoteCount count = mock(VoteRepository.SongVoteCount.class);
+        when(count.getSongId()).thenReturn(100L);
+        when(count.getCount()).thenReturn(2L);
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(count));
+
+        votingService.castVote(10L, 50L, 100L, secondVoter);
+
+        ArgumentCaptor<VotingRoundGetDTO> dtoCaptor = ArgumentCaptor.forClass(VotingRoundGetDTO.class);
+        verify(votingWebSocketPublisher).broadcastVotingRound(eq(10L), dtoCaptor.capture());
+
+        SongGetDTO votedSong = dtoCaptor.getValue().getCandidates().stream()
+                .filter(s -> s.getId().equals(100L))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(2, votedSong.getCurrentVoteCount());
     }
 }
