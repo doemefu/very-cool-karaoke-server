@@ -9,6 +9,7 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,7 +68,9 @@ public class VotingService {
             throw new ResponseStatusException(HttpStatus.GONE, "Voting round is CLOSED");
         }
         // Voter is participant check
-        if (!round.getSession().getParticipants().contains(voter)) {
+        boolean isParticipant = round.getSession().getParticipants().stream()
+                .anyMatch(p -> p.getId().equals(voter.getId()));
+        if (!isParticipant) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not a participant");
         }
 
@@ -87,7 +90,11 @@ public class VotingService {
         vote.setVotingRound(round);
         vote.setVoter(voter);
         vote.setVotedSong(song);
-        voteRepository.save(vote);
+        try {
+            voteRepository.saveAndFlush(vote);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Already voted");
+        }
 
         Map<Long, Long> counts = getVoteCounts(round);
         VotingRoundGetDTO roundDTO = DTOMapper.INSTANCE.toVotingRoundGetDTO(round, counts);
