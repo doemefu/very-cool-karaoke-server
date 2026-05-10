@@ -7,7 +7,6 @@ import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
 import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -120,11 +119,12 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
 
         assertDoesNotThrow(() -> votingService.castVote(10L, 50L, 100L, voter));
 
-        verify(voteRepository, times(1)).save(any(Vote.class));
+        verify(voteRepository, times(1)).saveAndFlush(any(Vote.class));
     }
 
     // Check fields correctly set in vote
@@ -134,11 +134,11 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
 
         votingService.castVote(10L, 50L, 100L, voter);
 
-        verify(voteRepository).save(argThat(vote ->
+        verify(voteRepository).saveAndFlush(argThat(vote ->
                 vote.getVotingRound().equals(votingRound) &&
                         vote.getVoter().equals(voter) &&
                         vote.getVotedSong().equals(candidateSong)
@@ -156,7 +156,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 99L, 100L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -170,7 +170,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(999L, 50L, 100L, voter));
 
         assertEquals(400, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -185,7 +185,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, voter));
 
         assertEquals(410, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -199,7 +199,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, nonParticipant));
 
         assertEquals(403, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -214,7 +214,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 999L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -229,7 +229,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 200L, voter));
 
         assertEquals(400, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -245,7 +245,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, voter));
 
         assertEquals(409, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
