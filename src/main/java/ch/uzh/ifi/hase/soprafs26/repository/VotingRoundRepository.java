@@ -14,6 +14,6 @@ import java.util.Optional;
 @Repository("votingRoundRepository")
 public interface VotingRoundRepository extends JpaRepository<VotingRound, Long> {
     List<VotingRound> findBySessionAndStatus(Session session, VotingStatus status);
-    @Query("SELECT vr FROM VotingRound vr LEFT JOIN FETCH vr.candidates WHERE vr.id = :id")
+    @Query("SELECT DISTINCT vr FROM VotingRound vr LEFT JOIN FETCH vr.candidates WHERE vr.id = :id")
     Optional<VotingRound> findByIdWithCandidates(@Param("id") Long id);
 }
