@@ -43,6 +43,10 @@ public class Song {
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "added_by_id")
+    private User addedBy;
+
     // to mark the song as performed
     public void markPerformed() {
         this.performed = true;

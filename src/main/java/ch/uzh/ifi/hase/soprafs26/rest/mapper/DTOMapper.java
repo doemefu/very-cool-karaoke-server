@@ -64,6 +64,9 @@ public interface DTOMapper {
     @Mapping(source = "token", target = "token")
     UserTokenDTO convertEntityToUserTokenDTO(User user);
 
+    @Mapping(target = "status",      source = "round.status")
+    @Mapping(target = "startedAt",   source = "round.startsAt")
+    @Mapping(target = "endsAt",      source = "round.endsAt")
     @Mapping(target = "candidates", source = "candidates", qualifiedByName = "sortedByVotes")
     VotingRoundGetDTO toVotingRoundGetDTO(VotingRound round, @Context Map<Long, Long> counts);
 

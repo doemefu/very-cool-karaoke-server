@@ -138,4 +138,5 @@ class SpotifyServiceTest {
 
         assertTrue(results.isEmpty());
     }
+
 }

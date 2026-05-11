@@ -30,14 +30,25 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final SongWebSocketPublisher songWebSocketPublisher;
+    private final UserService userService;
 
     @Autowired
     public SessionService(SessionRepository sessionRepository,
                           UserRepository userRepository,
-                          SongWebSocketPublisher songWebSocketPublisher) {
+                          SongWebSocketPublisher songWebSocketPublisher, UserService userService) {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.songWebSocketPublisher = songWebSocketPublisher;
+        this.userService = userService;
+    }
+
+    public void verifyIsAdmin(Long sessionId, String token) {
+        User user = userService.getUserByToken(token);
+        Session session = getSessionById(sessionId);
+        if (!session.getAdmin().getId().equals(user.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only the session admin can perform this action");
+        }
     }
 
     /*
@@ -246,5 +257,31 @@ public class SessionService {
         sessionRepository.save(session);
         log.debug("User {} fulfilled initial song requirement for session {}",
                 userId, sessionId);
+    }
+
+
+    /**
+     * Returns the list of performed songs for a completed session (review screen).
+     * Songs are ordered by position (play order)
+     *
+     * @param sessionId the session to review
+     * @return list of performed songs as DTOs
+     * @throws ResponseStatusException 404 if session not found, 403 if not ENDED
+     */
+    @Transactional(readOnly = true)
+    public List<SongGetDTO> getSessionReview(Long sessionId) {
+        Session session = getSessionById(sessionId);
+
+        if (session.getStatus() != SessionStatus.ENDED) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Session has not ended yet");
+        }
+
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        return session.getPlaylist().stream()
+                .filter(s -> Boolean.TRUE.equals(s.getPerformed()))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .toList();
     }
 }

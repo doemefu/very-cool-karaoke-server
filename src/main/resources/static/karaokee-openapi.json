@@ -676,6 +676,9 @@
           "204": {
             "description": "Song removed"
           },
+          "401": {
+            "description": "Invalid or missing token"
+          },
           "403": {
             "description": "Only admin can remove songs"
           },

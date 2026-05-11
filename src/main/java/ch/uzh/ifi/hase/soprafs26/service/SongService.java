@@ -8,8 +8,10 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,56 +29,56 @@ public class SongService {
     private final SongRepository songRepository;
     private final SessionService sessionService;
     private final SongWebSocketPublisher songWebSocketPublisher;
+    private final VotingService votingService;
+    private final UserService userService;
 
-    // ConcurrentHashMap doesn't allow null values, so we wrap in Optional
     private final Map<String, Optional<String>> lyricsCache = new ConcurrentHashMap<>();
 
     public SongService(SpotifyService spotifyService, LyricsService lyricsService,
                        SongRepository songRepository, SessionService sessionService,
-                       SongWebSocketPublisher songWebSocketPublisher) {
+                       SongWebSocketPublisher songWebSocketPublisher,
+                       VotingService votingService, UserService userService) {
         this.spotifyService = spotifyService;
         this.lyricsService = lyricsService;
         this.songRepository = songRepository;
         this.sessionService = sessionService;
         this.songWebSocketPublisher = songWebSocketPublisher;
+        this.votingService = votingService;
+        this.userService = userService;
     }
 
-    /**
-     * Searches Spotify for tracks matching the query, checks lyrics availability
-     * for all results in parallel, caches the lyrics, and returns the result list.
-     */
     public List<SongSearchResultDTO> search(String query) {
         List<SpotifyTrack> tracks = spotifyService.search(query);
+        return checkLyricsAndBuildDtos(tracks);
+    }
 
-        // Fan out lyrics checks in parallel
-        List<CompletableFuture<String>> lyricsFutures = tracks.stream()
-                .map(track -> CompletableFuture.supplyAsync(
-                        () -> lyricsService.fetchLyrics(track.artist(), track.title())))
+    private List<SongSearchResultDTO> checkLyricsAndBuildDtos(List<SpotifyTrack> tracks) {
+        List<CompletableFuture<String>> futures = tracks.stream()
+                .map(t -> CompletableFuture.supplyAsync(
+                        () -> lyricsService.fetchLyrics(t.artist(), t.title())))
                 .toList();
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        CompletableFuture.allOf(lyricsFutures.toArray(new CompletableFuture[0])).join();
-
-        // Build DTOs and populate cache
         return IntStream.range(0, tracks.size()).mapToObj(i -> {
-            SpotifyTrack track = tracks.get(i);
-            String lyrics = lyricsFutures.get(i).join();
-            lyricsCache.put(track.spotifyId(), Optional.ofNullable(lyrics));
+            SpotifyTrack t = tracks.get(i);
+            String lyrics = futures.get(i).join();
+            lyricsCache.put(t.spotifyId(), Optional.ofNullable(lyrics));
 
             SongSearchResultDTO dto = new SongSearchResultDTO();
-            dto.setSpotifyId(track.spotifyId());
-            dto.setTitle(track.title());
-            dto.setArtist(track.artist());
-            dto.setAlbumName(track.albumName());
-            dto.setAlbumArt(track.albumArt());
-            dto.setDurationMs(track.durationMs());
-            dto.setDurationSeconds(track.durationMs() / 1000);
+            dto.setSpotifyId(t.spotifyId());
+            dto.setTitle(t.title());
+            dto.setArtist(t.artist());
+            dto.setAlbumName(t.albumName());
+            dto.setAlbumArt(t.albumArt());
+            dto.setDurationMs(t.durationMs());
+            dto.setDurationSeconds(t.durationMs() / 1000);
             dto.setLyricsAvailable(lyrics != null);
             return dto;
         }).toList();
     }
 
     @Transactional
-    public SongGetDTO addToQueue(Long sessionId, SongPostDTO dto) {
+    public SongGetDTO addToQueue(Long sessionId, SongPostDTO dto, String token) {
         Session session = sessionService.getSessionById(sessionId); // throws 404
 
         Song song = new Song();
@@ -88,6 +90,7 @@ public class SongService {
         song.setDurationMs(dto.getDurationMs());
         song.setLyrics(getCachedLyrics(dto.getSpotifyId())); // nullable
         song.setSession(session);
+        song.setAddedBy(userService.getUserByToken(token));
         song = songRepository.save(song);
 
         session.addSong(song); // update in-memory list for broadcast
@@ -143,26 +146,75 @@ public class SongService {
     }
 
     @Transactional
-    public void nextSong(Long sessionId) {
+    public void deleteSongFromQueue(Long sessionId, Long songId, String token) {
+        sessionService.verifyIsAdmin(sessionId, token);
         Session session = sessionService.getSessionById(sessionId);
-        List<Song> playlist = session.getPlaylist();
+
+        Song songToDelete = songRepository.findById(songId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found"));
+
+        if (!songToDelete.getSession().getId().equals(sessionId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found in this session");
+        }
+
+        session.removeSong(songToDelete);
+        songRepository.delete(songToDelete);
+
         Map<Long, Long> emptyVotes = Collections.emptyMap();
-
-        playlist.stream()
-                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
-                .findFirst()
-                .ifPresent(s -> {
-                    s.markPerformed();
-                    songRepository.save(s);
-                });
-
-        List<SongGetDTO> updatedQueue = playlist.stream()
-                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+        List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
+                .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
+                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes))
                 .toList();
 
-        SongGetDTO next = updatedQueue.isEmpty() ? null : updatedQueue.get(0);
-        songWebSocketPublisher.broadcastCurrentSong(sessionId, next);
-        songWebSocketPublisher.broadcastQueue(sessionId, updatedQueue);
+        // TODO: Next ticket will refactor nextSong() function where as the method extracted will be used here
+        songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+    }
+
+    @Transactional
+    public void nextSong(Long sessionId) {
+        Session session = sessionService.getSessionById(sessionId);
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+
+        session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .ifPresent(current -> {
+                    current.setPerformed(true);
+                    songRepository.save(current);
+                });
+
+        List<Song> unplayedSongs = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .toList();
+
+        if (unplayedSongs.size() >= 2) {
+            votingService.createVotingRound(sessionId);
+        } else if (unplayedSongs.size() == 1) {
+            Song lastSong = unplayedSongs.get(0);
+            SongGetDTO nextSongDTO = DTOMapper.INSTANCE.toSongGetDTO(lastSong, emptyVotes);
+            songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSongDTO);
+            songWebSocketPublisher.broadcastQueue(sessionId, List.of(nextSongDTO));
+            songWebSocketPublisher.broadcastLyrics(sessionId, lastSong.getLyrics());
+        } else {
+            songWebSocketPublisher.broadcastCurrentSong(sessionId, null);
+            songWebSocketPublisher.broadcastQueue(sessionId, Collections.emptyList());
+            songWebSocketPublisher.broadcastLyrics(sessionId, null);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void broadcastVotingRoundSongWinner(Long sessionId, Song winner) {
+        Session session = sessionService.getSessionById(sessionId);
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
+        SongGetDTO nextSong = DTOMapper.INSTANCE.toSongGetDTO(winner, emptyVotes);
+
+        List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
+                .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
+                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes))
+                .toList();
+
+        songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSong);
+        songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        songWebSocketPublisher.broadcastLyrics(sessionId, winner.getLyrics());
     }
 }

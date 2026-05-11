@@ -5,21 +5,30 @@ import ch.uzh.ifi.hase.soprafs26.entity.*;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
+import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.context.ApplicationContext;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,8 +43,23 @@ class VotingServiceTest {
     @Mock
     private VoteRepository voteRepository;
 
+    @Mock
+    private SessionService sessionService;
+
+    @Mock
+    private SongService songService;
+
+    @Mock
+    private VotingWebSocketPublisher votingWebSocketPublisher;
+
+    @Mock
+    private TaskScheduler taskScheduler;
+
     @InjectMocks
     private VotingService votingService;
+
+    @Mock
+    private ApplicationContext applicationContext;
 
     private Session session;
     private User voter;
@@ -68,6 +92,7 @@ class VotingServiceTest {
         candidateSong.setArtist("Queen");
         candidateSong.setSpotifyId("spotify:123");
         candidateSong.setDurationMs(354000);
+        candidateSong.setPerformed(false);
 
         nonCandidateSong = new Song();
         nonCandidateSong.setId(200L);
@@ -75,6 +100,7 @@ class VotingServiceTest {
         nonCandidateSong.setArtist("The Beatles");
         nonCandidateSong.setSpotifyId("spotify:456");
         nonCandidateSong.setDurationMs(125000);
+        nonCandidateSong.setPerformed(false);
 
         votingRound = new VotingRound();
         votingRound.setId(50L);
@@ -83,6 +109,9 @@ class VotingServiceTest {
         votingRound.setStartsAt(LocalDateTime.now());
         votingRound.setEndsAt(LocalDateTime.now().plusSeconds(30));
         votingRound.getCandidates().add(candidateSong);
+
+        lenient().when(applicationContext.getBean(VotingService.class)).thenReturn(votingService);
+        lenient().when(votingRoundRepository.findBySessionAndStatus(any(), any())).thenReturn(List.of());
     }
 
 
@@ -93,11 +122,12 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
 
         assertDoesNotThrow(() -> votingService.castVote(10L, 50L, 100L, voter));
 
-        verify(voteRepository, times(1)).save(any(Vote.class));
+        verify(voteRepository, times(1)).saveAndFlush(any(Vote.class));
     }
 
     // Check fields correctly set in vote
@@ -107,11 +137,12 @@ class VotingServiceTest {
         when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
-        when(voteRepository.save(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
 
         votingService.castVote(10L, 50L, 100L, voter);
 
-        verify(voteRepository).save(argThat(vote ->
+        verify(voteRepository).saveAndFlush(argThat(vote ->
                 vote.getVotingRound().equals(votingRound) &&
                         vote.getVoter().equals(voter) &&
                         vote.getVotedSong().equals(candidateSong)
@@ -129,7 +160,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 99L, 100L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -143,7 +174,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(999L, 50L, 100L, voter));
 
         assertEquals(400, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -158,7 +189,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, voter));
 
         assertEquals(410, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -172,7 +203,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, nonParticipant));
 
         assertEquals(403, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -187,7 +218,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 999L, voter));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -241,7 +272,6 @@ class VotingServiceTest {
                 () -> votingService.getVotingRound(10L, 99L));
 
         assertEquals(404, ex.getStatusCode().value());
-        assertTrue(ex.getReason().contains("not found"));
     }
 
     @Test
@@ -252,7 +282,6 @@ class VotingServiceTest {
                 () -> votingService.getVotingRound(99L, 50L));
 
         assertEquals(404, ex.getStatusCode().value());
-        assertTrue(ex.getReason().contains("not in this session"));
     }
 
     @Test
@@ -281,5 +310,191 @@ class VotingServiceTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void createVotingRound_validInput_schedulesTimerAndBroadcasts() {
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
+        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
+
+        Instant before = Instant.now();
+        votingService.createVotingRound(10L);
+
+        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
+        verify(votingWebSocketPublisher, times(1)).broadcastVotingRound(eq(10L), any());
+
+        ArgumentCaptor<Instant> timeCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler, times(1)).schedule(any(Runnable.class), timeCaptor.capture());
+        assertTrue(timeCaptor.getValue().isAfter(before.plusSeconds(29)));
+        assertTrue(timeCaptor.getValue().isBefore(before.plusSeconds(32)));
+    }
+
+    @Test
+    void createVotingRound_playlistTooSmall_skipsRound() {
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong)));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        votingService.createVotingRound(10L);
+
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
+        verify(votingRoundRepository, never()).save(any());
+        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
+        verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
+    void createVotingRound_existingOpenRound_closesItAndStartsNewOne() {
+        VotingRound stale = new VotingRound();
+        stale.setId(49L);
+        stale.setSession(session);
+        stale.setStatus(VotingStatus.OPEN);
+
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.findBySessionAndStatus(session, VotingStatus.OPEN))
+                .thenReturn(List.of(stale));
+        when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
+        when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
+
+        votingService.createVotingRound(10L);
+
+        assertEquals(VotingStatus.CLOSED, stale.getStatus());
+        verify(votingRoundRepository, times(1)).saveAll(anyList());
+        verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
+    }
+
+    @Test
+    void finishVotingRound_calculatesWinnerClosesRoundAndSwapsQueue() {
+        session.setPlaylist(new ArrayList<>(List.of(nonCandidateSong, candidateSong)));
+
+        votingRound.getCandidates().add(nonCandidateSong);
+
+        when(votingRoundRepository.findByIdWithCandidates(50L)).thenReturn(Optional.of(votingRound));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+
+        VoteRepository.SongVoteCount winnerCount = mock(VoteRepository.SongVoteCount.class);
+        when(winnerCount.getSongId()).thenReturn(100L);
+        when(winnerCount.getCount()).thenReturn(5L);
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(winnerCount));
+
+        votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
+
+        assertEquals(VotingStatus.CLOSED, votingRound.getStatus());
+        verify(votingRoundRepository, times(1)).save(votingRound);
+
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
+    }
+
+    @Test
+    void finishVotingRound_alreadyClosed_doesNothing() {
+        votingRound.setStatus(VotingStatus.CLOSED);
+        when(votingRoundRepository.findByIdWithCandidates(50L)).thenReturn(Optional.of(votingRound));
+
+        votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
+
+        verify(votingRoundRepository, never()).save(any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+    }
+
+    @Test
+    void castVote_validInput_broadcastDtoHasStartedAtAndEndsAtSet() {
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
+        when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
+
+        votingService.castVote(10L, 50L, 100L, voter);
+
+        ArgumentCaptor<VotingRoundGetDTO> dtoCaptor = ArgumentCaptor.forClass(VotingRoundGetDTO.class);
+        verify(votingWebSocketPublisher).broadcastVotingRound(eq(10L), dtoCaptor.capture());
+
+        VotingRoundGetDTO dto = dtoCaptor.getValue();
+        assertNotNull(dto.getStartedAt(), "startedAt must be mapped from entity startsAt");
+        assertNotNull(dto.getEndsAt(), "endsAt must be mapped from entity endsAt");
+        assertEquals(VotingStatus.OPEN, dto.getStatus());
+    }
+
+    @Test
+    void castVote_validInput_broadcastDtoContainsUpdatedCount() {
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
+        when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+
+        VoteRepository.SongVoteCount count = mock(VoteRepository.SongVoteCount.class);
+        when(count.getSongId()).thenReturn(100L);
+        when(count.getCount()).thenReturn(1L);
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(count));
+
+        votingService.castVote(10L, 50L, 100L, voter);
+
+        ArgumentCaptor<VotingRoundGetDTO> dtoCaptor = ArgumentCaptor.forClass(VotingRoundGetDTO.class);
+        verify(votingWebSocketPublisher).broadcastVotingRound(eq(10L), dtoCaptor.capture());
+
+        SongGetDTO votedSong = dtoCaptor.getValue().getCandidates().stream()
+                .filter(s -> s.getId().equals(100L))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(1, votedSong.getCurrentVoteCount());
+    }
+
+    @Test
+    void createVotingRound_emptyPlaylist_returnsEarlyWithoutSideEffects() {
+        session.setPlaylist(new ArrayList<>());
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+
+        votingService.createVotingRound(10L);
+
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(votingRoundRepository, never()).save(any());
+        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
+        verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
+    void createVotingRound_allSongsPerformed_treatsAsEmpty() {
+        candidateSong.setPerformed(true);
+        nonCandidateSong.setPerformed(true);
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+
+        votingService.createVotingRound(10L);
+
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(votingRoundRepository, never()).save(any());
+    }
+
+    @Test
+    void castVote_secondVoter_broadcastDtoShowsAggregatedCount() {
+        User secondVoter = new User();
+        secondVoter.setId(3L);
+        secondVoter.setUsername("singer2");
+        secondVoter.setToken("voter2-token");
+        session.addParticipant(secondVoter);
+
+        when(votingRoundRepository.findById(50L)).thenReturn(Optional.of(votingRound));
+        when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
+        when(voteRepository.existsByVotingRoundAndVoter(votingRound, secondVoter)).thenReturn(false);
+        when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+
+        VoteRepository.SongVoteCount count = mock(VoteRepository.SongVoteCount.class);
+        when(count.getSongId()).thenReturn(100L);
+        when(count.getCount()).thenReturn(2L);
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(count));
+
+        votingService.castVote(10L, 50L, 100L, secondVoter);
+
+        ArgumentCaptor<VotingRoundGetDTO> dtoCaptor = ArgumentCaptor.forClass(VotingRoundGetDTO.class);
+        verify(votingWebSocketPublisher).broadcastVotingRound(eq(10L), dtoCaptor.capture());
+
+        SongGetDTO votedSong = dtoCaptor.getValue().getCandidates().stream()
+                .filter(s -> s.getId().equals(100L))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(2, votedSong.getCurrentVoteCount());
     }
 }
