@@ -111,6 +111,7 @@ class VotingServiceTest {
         votingRound.getCandidates().add(candidateSong);
 
         lenient().when(applicationContext.getBean(VotingService.class)).thenReturn(votingService);
+        lenient().when(votingRoundRepository.findBySessionAndStatus(any(), any())).thenReturn(List.of());
     }
 
 
