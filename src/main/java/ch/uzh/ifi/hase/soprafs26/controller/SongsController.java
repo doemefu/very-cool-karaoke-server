@@ -7,8 +7,6 @@ import ch.uzh.ifi.hase.soprafs26.service.SongService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -95,11 +93,4 @@ public class SongsController implements SongsApi {
         return ResponseEntity.noContent().build();
     }
 
-    // GET /songs/{spotifyId}/recommendations — Issue #69
-    // Returns up to 5 recommendations with lyricsAvailable=true, 404 if none found
-    @GetMapping("/songs/{spotifyId}/recommendations")
-    public ResponseEntity<List<SongSearchResultDTO>> songRecommendationsGet(
-            @PathVariable String spotifyId) {
-        return ResponseEntity.ok(songService.getRecommendationsForSong(spotifyId));
-    }
 }

@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -318,6 +319,7 @@ class VotingServiceTest {
         when(votingRoundRepository.save(any(VotingRound.class))).thenReturn(votingRound);
         when(voteRepository.countVotesPerSong(any())).thenReturn(List.of());
 
+        Instant before = Instant.now();
         votingService.createVotingRound(10L);
 
         verify(votingRoundRepository, times(1)).save(any(VotingRound.class));
@@ -325,7 +327,8 @@ class VotingServiceTest {
 
         ArgumentCaptor<Instant> timeCaptor = ArgumentCaptor.forClass(Instant.class);
         verify(taskScheduler, times(1)).schedule(any(Runnable.class), timeCaptor.capture());
-        assertTrue(timeCaptor.getValue().isAfter(Instant.now().plusSeconds(29)));
+        assertTrue(timeCaptor.getValue().isAfter(before.plusSeconds(29)));
+        assertTrue(timeCaptor.getValue().isBefore(before.plusSeconds(32)));
     }
 
     @Test
@@ -334,7 +337,7 @@ class VotingServiceTest {
         when(sessionService.getSessionById(10L)).thenReturn(session);
         votingService.createVotingRound(10L);
 
-        verify(songService, times(1)).nextSong(10L);
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
         verify(votingRoundRepository, never()).save(any());
         verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
         verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));

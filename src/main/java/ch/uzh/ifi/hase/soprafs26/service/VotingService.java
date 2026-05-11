@@ -135,8 +135,11 @@ public class VotingService {
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        if (playlist.size() <= 1) {
-            songService.nextSong(sessionId);
+        if (playlist.isEmpty()) {
+            return;
+        }
+        if (playlist.size() == 1) {
+            songService.broadcastVotingRoundSongWinner(sessionId, playlist.get(0));
             return;
         }
 

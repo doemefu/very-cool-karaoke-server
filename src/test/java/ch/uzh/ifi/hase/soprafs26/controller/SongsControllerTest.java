@@ -168,31 +168,4 @@ class SongsControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    void songsSpotifyIdRecommendationsGet_returnsRecommendations() throws Exception {
-        SongSearchResultDTO rec = new SongSearchResultDTO();
-        rec.setSpotifyId("rec1");
-        rec.setTitle("Waterloo");
-        rec.setArtist("ABBA");
-        rec.setAlbumArt("http://img/w.jpg");
-        rec.setDurationMs(170000);
-        rec.setDurationSeconds(170);
-        rec.setLyricsAvailable(true);
-
-        when(songService.getRecommendationsForSong("seed123")).thenReturn(List.of(rec));
-
-        mockMvc.perform(get("/songs/seed123/recommendations"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].spotifyId").value("rec1"))
-                .andExpect(jsonPath("$[0].lyricsAvailable").value(true));
-    }
-
-    @Test
-    void songsSpotifyIdRecommendationsGet_noLyricsFound_returns404() throws Exception {
-        when(songService.getRecommendationsForSong("noLyrics"))
-                .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                        org.springframework.http.HttpStatus.NOT_FOUND, "No recommendations with lyrics found"));
-
-        mockMvc.perform(get("/songs/noLyrics/recommendations"))
-                .andExpect(status().isNotFound());
-    }
 }
