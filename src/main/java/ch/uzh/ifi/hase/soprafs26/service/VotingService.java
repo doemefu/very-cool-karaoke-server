@@ -207,11 +207,10 @@ public class VotingService {
         Map<Long, Long> finalCounts = getVoteCounts(round);
         votingWebSocketPublisher.broadcastVotingRound(sessionId, DTOMapper.INSTANCE.toVotingRoundGetDTO(round, finalCounts));
 
-        Map<Long, Long> counts = getVoteCounts(round);
-        long maxVotes = counts.values().stream().max(Long::compare).orElse(0L);
+        long maxVotes = finalCounts.values().stream().max(Long::compare).orElse(0L);
 
         List<Song> winnerCandidates = round.getCandidates().stream()
-                .filter(s -> counts.getOrDefault(s.getId(), 0L) == maxVotes)
+                .filter(s -> finalCounts.getOrDefault(s.getId(), 0L) == maxVotes)
                 .toList();
 
         Song votingRoundSongWinner = winnerCandidates.get(random.nextInt(winnerCandidates.size()));
