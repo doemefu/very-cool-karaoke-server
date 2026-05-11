@@ -262,7 +262,7 @@ public class SessionService {
 
     /**
      * Returns the list of performed songs for a completed session (review screen).
-     * Songs are ordered by id (which corresponds to play order)
+     * Songs are ordered by position (play order)
      *
      * @param sessionId the session to review
      * @return list of performed songs as DTOs

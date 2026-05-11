@@ -442,6 +442,32 @@ class VotingServiceTest {
     }
 
     @Test
+    void createVotingRound_emptyPlaylist_returnsEarlyWithoutSideEffects() {
+        session.setPlaylist(new ArrayList<>());
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+
+        votingService.createVotingRound(10L);
+
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(votingRoundRepository, never()).save(any());
+        verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
+        verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
+    void createVotingRound_allSongsPerformed_treatsAsEmpty() {
+        candidateSong.setPerformed(true);
+        nonCandidateSong.setPerformed(true);
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, nonCandidateSong)));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+
+        votingService.createVotingRound(10L);
+
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(votingRoundRepository, never()).save(any());
+    }
+
+    @Test
     void castVote_secondVoter_broadcastDtoShowsAggregatedCount() {
         User secondVoter = new User();
         secondVoter.setId(3L);

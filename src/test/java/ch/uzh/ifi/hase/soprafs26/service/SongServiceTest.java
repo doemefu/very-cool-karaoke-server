@@ -222,6 +222,7 @@ class SongServiceTest {
         verify(votingService, never()).createVotingRound(anyLong());
         verify(songWebSocketPublisher, times(1)).broadcastCurrentSong(eq(2L), any(SongGetDTO.class));
         verify(songWebSocketPublisher, times(1)).broadcastQueue(eq(2L), argThat(list -> !list.isEmpty()));
+        verify(songWebSocketPublisher, times(1)).broadcastLyrics(eq(2L), any());
     }
 
     @Test
@@ -243,6 +244,7 @@ class SongServiceTest {
 
         verify(songWebSocketPublisher).broadcastCurrentSong(eq(3L), isNull());
         verify(songWebSocketPublisher).broadcastQueue(eq(3L), argThat(List::isEmpty));
+        verify(songWebSocketPublisher).broadcastLyrics(eq(3L), isNull());
     }
 
     @Test
@@ -322,6 +324,73 @@ class SongServiceTest {
     }
 
     @Test
+    void deleteSongFromQueue_deletesCurrentSong_multipleRemaining_broadcastsNullCurrentSong() {
+        User admin = new User();
+        admin.setId(1L);
+
+        Session session = new Session();
+        session.setId(1L);
+        session.setAdmin(admin);
+
+        Song currentSong = new Song();
+        currentSong.setId(10L);
+        currentSong.setTitle("Current Song");
+        currentSong.setPerformed(false);
+        currentSong.setSession(session);
+
+        Song nextSong = new Song();
+        nextSong.setId(20L);
+        nextSong.setTitle("Song 2");
+        nextSong.setPerformed(false);
+        nextSong.setSession(session);
+
+        Song anotherSong = new Song();
+        anotherSong.setId(30L);
+        anotherSong.setTitle("Song 3");
+        anotherSong.setPerformed(false);
+        anotherSong.setSession(session);
+
+        session.getPlaylist().add(currentSong);
+        session.getPlaylist().add(nextSong);
+        session.getPlaylist().add(anotherSong);
+
+        when(sessionService.getSessionById(1L)).thenReturn(session);
+        when(songRepository.findById(10L)).thenReturn(Optional.of(currentSong));
+
+        songService.deleteSongFromQueue(1L, 10L, "test-token");
+
+        // 2+ songs remain — broadcast null current song (voting round TODO)
+        verify(songWebSocketPublisher).broadcastCurrentSong(eq(1L), isNull());
+        verify(songWebSocketPublisher).broadcastQueue(eq(1L), argThat(list -> list.size() == 2));
+    }
+
+    @Test
+    void deleteSongFromQueue_deletesCurrentSong_noneRemaining_broadcastsNull() {
+        User admin = new User();
+        admin.setId(1L);
+
+        Session session = new Session();
+        session.setId(1L);
+        session.setAdmin(admin);
+
+        Song currentSong = new Song();
+        currentSong.setId(10L);
+        currentSong.setTitle("Only Song");
+        currentSong.setPerformed(false);
+        currentSong.setSession(session);
+
+        session.getPlaylist().add(currentSong);
+
+        when(sessionService.getSessionById(1L)).thenReturn(session);
+        when(songRepository.findById(10L)).thenReturn(Optional.of(currentSong));
+
+        songService.deleteSongFromQueue(1L, 10L, "test-token");
+
+        verify(songWebSocketPublisher).broadcastCurrentSong(eq(1L), isNull());
+        verify(songWebSocketPublisher).broadcastQueue(eq(1L), argThat(List::isEmpty));
+    }
+
+    @Test
     void deleteSongFromQueue_throws404_whenSessionNotFound() {
         when(sessionService.getSessionById(99L)).thenThrow(
                 new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND)
@@ -354,6 +423,31 @@ class SongServiceTest {
                 () -> songService.deleteSongFromQueue(1L, 99L, "test-token")
         );
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    }
+
+    @Test
+    void broadcastVotingRoundSongWinner_broadcastsCurrentSongQueueAndLyrics() {
+        Session session = new Session();
+        session.setId(5L);
+
+        Song winner = new Song();
+        winner.setId(77L);
+        winner.setTitle("Winner Song");
+        winner.setArtist("Artist");
+        winner.setSpotifyId("spotify:win");
+        winner.setDurationMs(200000);
+        winner.setPerformed(false);
+        winner.setLyrics("La la la");
+        winner.setSession(session);
+        session.getPlaylist().add(winner);
+
+        when(sessionService.getSessionById(5L)).thenReturn(session);
+
+        songService.broadcastVotingRoundSongWinner(5L, winner);
+
+        verify(songWebSocketPublisher).broadcastCurrentSong(eq(5L), argThat(dto -> dto != null && "Winner Song".equals(dto.getTitle())));
+        verify(songWebSocketPublisher).broadcastQueue(eq(5L), argThat(list -> list.size() == 1));
+        verify(songWebSocketPublisher).broadcastLyrics(eq(5L), eq("La la la"));
     }
 
     @Test

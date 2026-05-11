@@ -228,9 +228,11 @@ public class SongService {
             SongGetDTO nextSongDTO = DTOMapper.INSTANCE.toSongGetDTO(lastSong, emptyVotes);
             songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSongDTO);
             songWebSocketPublisher.broadcastQueue(sessionId, List.of(nextSongDTO));
+            songWebSocketPublisher.broadcastLyrics(sessionId, lastSong.getLyrics());
         } else {
             songWebSocketPublisher.broadcastCurrentSong(sessionId, null);
             songWebSocketPublisher.broadcastQueue(sessionId, Collections.emptyList());
+            songWebSocketPublisher.broadcastLyrics(sessionId, null);
         }
     }
 
@@ -246,5 +248,6 @@ public class SongService {
 
         songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSong);
         songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        songWebSocketPublisher.broadcastLyrics(sessionId, winner.getLyrics());
     }
 }

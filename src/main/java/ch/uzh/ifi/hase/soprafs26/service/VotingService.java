@@ -125,7 +125,7 @@ public class VotingService {
         List<VotingRound> openRounds = votingRoundRepository.findBySessionAndStatus(session, VotingStatus.OPEN);
         for (VotingRound stale : openRounds) {
             stale.setStatus(VotingStatus.CLOSED);
-            stale.setEndsAt(LocalDateTime.now());
+            stale.setEndsAt(LocalDateTime.now(ZoneOffset.UTC));
         }
         if (!openRounds.isEmpty()) {
             votingRoundRepository.saveAll(openRounds);
@@ -201,7 +201,7 @@ public class VotingService {
         }
 
         round.setStatus(VotingStatus.CLOSED);
-        round.setEndsAt(LocalDateTime.now());
+        round.setEndsAt(LocalDateTime.now(ZoneOffset.UTC));
         votingRoundRepository.save(round);
 
         Map<Long, Long> finalCounts = getVoteCounts(round);
