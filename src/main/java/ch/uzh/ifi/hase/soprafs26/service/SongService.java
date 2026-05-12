@@ -173,7 +173,6 @@ public class SongService {
     @Transactional
     public void nextSong(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
 
         session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
@@ -183,6 +182,11 @@ public class SongService {
                     songRepository.save(current);
                 });
 
+        promoteNextSong(sessionId, session);
+    }
+
+    private void promoteNextSong(Long sessionId, Session session) {
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
         List<Song> unplayedSongs = session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .toList();
