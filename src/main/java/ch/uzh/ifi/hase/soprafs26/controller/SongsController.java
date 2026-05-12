@@ -74,6 +74,10 @@ public class SongsController implements SongsApi {
     // Marks the current song as performed, broadcasts next currentSong + queue
     @Override
     public ResponseEntity<Void> sessionsSessionIdSongsNextPost(Long sessionId) {
+        String token = request.getHeader(TOKEN_HEADER);
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
         songService.nextSong(sessionId);
         return ResponseEntity.noContent().build();
     }

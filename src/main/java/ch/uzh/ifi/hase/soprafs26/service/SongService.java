@@ -179,7 +179,7 @@ public class SongService {
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .findFirst()
                 .ifPresent(current -> {
-                    current.setPerformed(true);
+                    current.markPerformed();
                     songRepository.save(current);
                 });
 
