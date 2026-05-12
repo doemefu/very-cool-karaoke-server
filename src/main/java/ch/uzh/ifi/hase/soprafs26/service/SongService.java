@@ -157,17 +157,25 @@ public class SongService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found in this session");
         }
 
+        boolean isCurrentSong = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .map(s -> s.getId().equals(songId))
+                .orElse(false);
+
         session.removeSong(songToDelete);
         songRepository.delete(songToDelete);
 
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
-        List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
-                .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
-                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes))
-                .toList();
-
-        // TODO: Next ticket will refactor nextSong() function where as the method extracted will be used here
-        songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        if (isCurrentSong) {
+            promoteNextSong(sessionId, session);
+        } else {
+            Map<Long, Long> emptyVotes = Collections.emptyMap();
+            List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
+                    .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                    .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                    .toList();
+            songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        }
     }
 
     @Transactional
