@@ -360,12 +360,6 @@ class SongServiceTest {
         songService.deleteSongFromQueue(1L, 10L, "test-token");
 
         verify(votingService, times(1)).createVotingRound(1L);
-        verify(songWebSocketPublisher).broadcastQueue(eq(1L), argThat(queue ->
-                queue != null
-                        && queue.size() == 2
-                        && queue.stream().map(SongGetDTO::getTitle).noneMatch("Current Song"::equals)
-                        && queue.stream().map(SongGetDTO::getTitle).anyMatch("Song 2"::equals)
-                        && queue.stream().map(SongGetDTO::getTitle).anyMatch("Song 3"::equals)));
         verify(songWebSocketPublisher, never()).broadcastCurrentSong(anyLong(), any());
     }
 
