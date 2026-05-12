@@ -9,7 +9,6 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -249,7 +248,6 @@ class SongServiceTest {
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
     void deleteSongFromQueue_success_removesQueuedSongAndBroadcasts() {
         User admin = new User();
         admin.setId(1L);
@@ -289,7 +287,6 @@ class SongServiceTest {
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
     void deleteSongFromQueue_success_deletesCurrentSongAndBroadcastsNew() {
         User admin = new User();
         admin.setId(1L);
@@ -327,8 +324,7 @@ class SongServiceTest {
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
-    void deleteSongFromQueue_deletesCurrentSong_multipleRemaining_broadcastsNullCurrentSong() {
+    void deleteSongFromQueue_deletesCurrentSong_multipleRemaining_opensVotingRound() {
         User admin = new User();
         admin.setId(1L);
 
@@ -363,13 +359,11 @@ class SongServiceTest {
 
         songService.deleteSongFromQueue(1L, 10L, "test-token");
 
-        // 2+ songs remain — broadcast null current song (voting round TODO)
-        verify(songWebSocketPublisher).broadcastCurrentSong(eq(1L), isNull());
-        verify(songWebSocketPublisher).broadcastQueue(eq(1L), argThat(list -> list.size() == 2));
+        verify(votingService, times(1)).createVotingRound(1L);
+        verify(songWebSocketPublisher, never()).broadcastCurrentSong(anyLong(), any());
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
     void deleteSongFromQueue_deletesCurrentSong_noneRemaining_broadcastsNull() {
         User admin = new User();
         admin.setId(1L);

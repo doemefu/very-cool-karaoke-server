@@ -157,23 +157,30 @@ public class SongService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found in this session");
         }
 
+        boolean isCurrentSong = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .map(s -> s.getId().equals(songId))
+                .orElse(false);
+
         session.removeSong(songToDelete);
         songRepository.delete(songToDelete);
 
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
-        List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
-                .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
-                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes))
-                .toList();
-
-        // TODO: Next ticket will refactor nextSong() function where as the method extracted will be used here
-        songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        if (isCurrentSong) {
+            promoteNextSong(sessionId, session);
+        } else {
+            Map<Long, Long> emptyVotes = Collections.emptyMap();
+            List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
+                    .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                    .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                    .toList();
+            songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        }
     }
 
     @Transactional
     public void nextSong(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
 
         session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
@@ -183,6 +190,11 @@ public class SongService {
                     songRepository.save(current);
                 });
 
+        promoteNextSong(sessionId, session);
+    }
+
+    private void promoteNextSong(Long sessionId, Session session) {
+        Map<Long, Long> emptyVotes = Collections.emptyMap();
         List<Song> unplayedSongs = session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .toList();
