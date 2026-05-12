@@ -136,6 +136,7 @@ class VotingServiceTest {
         when(songRepository.findById(100L)).thenReturn(Optional.of(candidateSong));
         when(voteRepository.existsByVotingRoundAndVoter(votingRound, voter)).thenReturn(false);
         when(voteRepository.saveAndFlush(any(Vote.class))).thenAnswer(i -> i.getArgument(0));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
 
         votingService.castVote(10L, 50L, 100L, voter);
 
