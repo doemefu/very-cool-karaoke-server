@@ -193,7 +193,7 @@ public class SongService {
         promoteNextSong(sessionId, session);
     }
 
-    private void promoteNextSong(Long sessionId, Session session) {
+    public void promoteNextSong(Long sessionId, Session session) {
         Map<Long, Long> emptyVotes = Collections.emptyMap();
         List<Song> unplayedSongs = session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
