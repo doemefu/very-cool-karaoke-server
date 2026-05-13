@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +42,7 @@ public class VotingRound {
             joinColumns = @JoinColumn(name = "voting_round_id"),
             inverseJoinColumns = @JoinColumn(name = "song_id")
     )
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Song> candidates = new ArrayList<>();
 
     @OneToMany(mappedBy = "votingRound", cascade = CascadeType.ALL, orphanRemoval = true)

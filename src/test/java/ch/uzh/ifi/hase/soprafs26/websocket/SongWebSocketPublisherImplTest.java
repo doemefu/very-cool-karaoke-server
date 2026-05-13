@@ -46,6 +46,13 @@ class SongWebSocketPublisherImplTest {
     }
 
     @Test
+    void broadcastCurrentSong_withNullSong_sendsNullPayload() {
+        publisher.broadcastCurrentSong(1L, null);
+
+        verify(messagingTemplate).convertAndSend("/topic/sessions/1/currentSong", (Object) null);
+    }
+
+    @Test
     void broadcastLyrics_sendsLyricsPayload() {
         ArgumentCaptor<LyricsPayload> captor = ArgumentCaptor.forClass(LyricsPayload.class);
 

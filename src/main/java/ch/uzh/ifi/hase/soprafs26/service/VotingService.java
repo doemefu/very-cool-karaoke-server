@@ -125,7 +125,7 @@ public class VotingService {
         List<VotingRound> openRounds = votingRoundRepository.findBySessionAndStatus(session, VotingStatus.OPEN);
         for (VotingRound stale : openRounds) {
             stale.setStatus(VotingStatus.CLOSED);
-            stale.setEndsAt(LocalDateTime.now());
+            stale.setEndsAt(LocalDateTime.now(ZoneOffset.UTC));
         }
         if (!openRounds.isEmpty()) {
             votingRoundRepository.saveAll(openRounds);
@@ -135,8 +135,11 @@ public class VotingService {
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        if (playlist.size() <= 1) {
-            songService.nextSong(sessionId);
+        if (playlist.isEmpty()) {
+            return;
+        }
+        if (playlist.size() == 1) {
+            songService.broadcastVotingRoundSongWinner(sessionId, playlist.get(0));
             return;
         }
 
@@ -198,21 +201,32 @@ public class VotingService {
         }
 
         round.setStatus(VotingStatus.CLOSED);
-        round.setEndsAt(LocalDateTime.now());
+        round.setEndsAt(LocalDateTime.now(ZoneOffset.UTC));
         votingRoundRepository.save(round);
 
         Map<Long, Long> finalCounts = getVoteCounts(round);
         votingWebSocketPublisher.broadcastVotingRound(sessionId, DTOMapper.INSTANCE.toVotingRoundGetDTO(round, finalCounts));
 
-        Map<Long, Long> counts = getVoteCounts(round);
-        long maxVotes = counts.values().stream().max(Long::compare).orElse(0L);
+        long maxVotes = finalCounts.values().stream().max(Long::compare).orElse(0L);
 
         List<Song> winnerCandidates = round.getCandidates().stream()
-                .filter(s -> counts.getOrDefault(s.getId(), 0L) == maxVotes)
+                .filter(s -> finalCounts.getOrDefault(s.getId(), 0L) == maxVotes)
                 .toList();
 
         Song votingRoundSongWinner = winnerCandidates.get(random.nextInt(winnerCandidates.size()));
         moveWinnerToFrontOfQueue(sessionId, votingRoundSongWinner);
         songService.broadcastVotingRoundSongWinner(sessionId, votingRoundSongWinner);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VotingRoundGetDTO> getRoundsForSession(Long sessionId) {
+        Session session = sessionService.getSessionById(sessionId);
+        List<VotingRound> rounds = votingRoundRepository.findBySessionOrderByStartsAtAsc(session);
+        return rounds.stream()
+                .map(r -> {
+                    Map<Long, Long> counts = getVoteCounts(r);
+                    return DTOMapper.INSTANCE.toVotingRoundGetDTO(r, counts);
+                })
+                .toList();
     }
 }

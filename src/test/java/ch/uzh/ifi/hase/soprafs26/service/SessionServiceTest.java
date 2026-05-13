@@ -7,6 +7,7 @@ import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -202,6 +203,60 @@ class SessionServiceTest {
         verify(sessionRepository, never()).save(any());
     }
 
+    @Test
+    void joinSession_rejoinBeforeAddingSong_reAddsToPendingInitialSong() {
+        session.addParticipant(participant);
+        assertFalse(session.isPendingInitialSong(participant),
+                "Pre-condition: participant should not yet be flagged as pending");
+        assertTrue(session.getPlaylist().isEmpty(),
+                "Pre-condition: participant has not contributed a song");
+        assertEquals(SessionStatus.CREATED, session.getStatus(),
+                "Pre-condition: session is still in lobby phase");
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertTrue(session.isPendingInitialSong(participant),
+                "Rejoin without a contributed song must re-add the user to pendingInitialSong");
+    }
+
+    @Test
+    void joinSession_rejoinAfterAddingSong_doesNotReAddToPendingInitialSong() {
+        session.addParticipant(participant);
+
+        Song contributed = new Song();
+        contributed.setId(500L);
+        contributed.setAddedBy(participant);
+        contributed.setSession(session);
+        session.addSong(contributed);
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertFalse(session.isPendingInitialSong(participant),
+                "Rejoin after a contributed song must NOT re-add the user to pendingInitialSong");
+    }
+
+    @Test
+    void joinSession_rejoinAfterSessionStarted_doesNotReAddToPendingInitialSong() {
+        session.addParticipant(participant);
+        session.setStatus(SessionStatus.ACTIVE);
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertFalse(session.isPendingInitialSong(participant),
+                "Rejoin after the session has started must NOT re-flag pendingInitialSong");
+    }
 
     // leaveSession
 

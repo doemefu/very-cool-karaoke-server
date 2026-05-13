@@ -155,12 +155,10 @@ public class SessionService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, USER_NOT_FOUND));
 
-        boolean isNewParticipant = !session.getParticipants().contains(user);
-
         // Set.add() is a no-op when user is already present → idempotent
         session.addParticipant(user);
 
-        if (isNewParticipant) {
+        if (session.getStatus() == SessionStatus.CREATED && !hasContributedSong(session, user)) {
             session.addToPendingInitialSong(user);
         }
 
@@ -190,6 +188,11 @@ public class SessionService {
         return saved;
     }
 
+    private boolean hasContributedSong(Session session, User user) {
+        return session.getPlaylist().stream()
+                .anyMatch(s -> s.getAddedBy() != null
+                        && s.getAddedBy().getId().equals(user.getId()));
+    }
 
     /**
      * Remove a user from a session's participant list (soft-leave).
@@ -281,7 +284,7 @@ public class SessionService {
 
     /**
      * Returns the list of performed songs for a completed session (review screen).
-     * Songs are ordered by id (which corresponds to play order)
+     * Songs are ordered by position (play order)
      *
      * @param sessionId the session to review
      * @return list of performed songs as DTOs
