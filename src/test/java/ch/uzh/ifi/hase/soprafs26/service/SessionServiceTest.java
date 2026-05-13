@@ -33,6 +33,9 @@ class SessionServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private SongWebSocketPublisher songWebSocketPublisher;
+
+    @Mock
     private SongService songService;
 
     @InjectMocks
