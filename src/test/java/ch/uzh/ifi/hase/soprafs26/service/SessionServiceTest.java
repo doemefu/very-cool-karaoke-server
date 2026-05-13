@@ -23,6 +23,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
+
 @ExtendWith(MockitoExtension.class)
 class SessionServiceTest {
 
@@ -356,5 +360,40 @@ class SessionServiceTest {
                 () -> sessionService.getParticipants(99L));
 
         assertEquals(404, ex.getStatusCode().value());
+    }
+
+
+    @Test
+    void updateSessionStatus_broadcastsStatusViaWebSocket() {
+        session.setStatus(SessionStatus.CREATED);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.updateSessionStatus(10L, SessionStatus.ACTIVE, admin.getId());
+
+        verify(sessionWebSocketPublisher).broadcastSessionStatus(eq(10L), any(SessionGetDTO.class));
+    }
+
+    @Test
+    void joinSession_broadcastsParticipantsViaWebSocket() {
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        verify(sessionWebSocketPublisher).broadcastParticipants(eq(10L), anyList());
+    }
+
+    @Test
+    void leaveSession_broadcastsParticipantsViaWebSocket() {
+        session.addParticipant(participant);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.leaveSession(10L, 2L);
+
+        verify(sessionWebSocketPublisher).broadcastParticipants(eq(10L), anyList());
     }
 }
