@@ -15,8 +15,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.UserGetDTO;
+import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
 
 import java.util.*;
+
 
 @Service
 @Transactional
@@ -30,15 +33,17 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final SongWebSocketPublisher songWebSocketPublisher;
+    private final SessionWebSocketPublisher sessionWebSocketPublisher;
     private final UserService userService;
 
     @Autowired
     public SessionService(SessionRepository sessionRepository,
                           UserRepository userRepository,
-                          SongWebSocketPublisher songWebSocketPublisher, UserService userService) {
+                          SongWebSocketPublisher songWebSocketPublisher, SessionWebSocketPublisher sessionWebSocketPublisher, UserService userService) {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.songWebSocketPublisher = songWebSocketPublisher;
+        this.sessionWebSocketPublisher = sessionWebSocketPublisher;
         this.userService = userService;
     }
 
@@ -113,7 +118,10 @@ public class SessionService {
         }
 
         session.setStatus(newStatus);
-        return sessionRepository.save(session);
+        Session saved = sessionRepository.save(session);
+        sessionWebSocketPublisher.broadcastSessionStatus(sessionId,
+                DTOMapper.INSTANCE.convertEntityToSessionGetDTO(saved));
+        return saved;
     }
 
 
@@ -170,6 +178,11 @@ public class SessionService {
                             DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes));
                     songWebSocketPublisher.broadcastLyrics(sessionId, s.getLyrics());
                 });
+        
+        List<UserGetDTO> participantDTOs = saved.getParticipants().stream()
+                .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
+                .toList();
+        sessionWebSocketPublisher.broadcastParticipants(sessionId, participantDTOs);
 
         log.debug("User {} joined session {}", userId, sessionId);
         return saved;
@@ -204,7 +217,13 @@ public class SessionService {
                         HttpStatus.NOT_FOUND, "Session or participant not found"));
 
         session.removeParticipant(user);
-        sessionRepository.save(session);
+        Session saved = sessionRepository.save(session);
+
+        List<UserGetDTO> participantDTOs = saved.getParticipants().stream()
+                .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
+                .toList();
+        sessionWebSocketPublisher.broadcastParticipants(sessionId, participantDTOs);
+        
         log.debug("User {} left session {}", userId, sessionId);
     }
 
