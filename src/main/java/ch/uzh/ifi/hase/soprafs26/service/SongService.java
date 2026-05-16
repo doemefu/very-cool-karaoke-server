@@ -104,6 +104,13 @@ public class SongService {
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);
 
+        // If this is the only unplayed song, the queue was empty before — promote it as currentSong
+        if (queue.size() == 1) {
+            SongGetDTO songDTO = DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes);
+            songWebSocketPublisher.broadcastCurrentSong(sessionId, songDTO);
+            songWebSocketPublisher.broadcastLyrics(sessionId, song.getLyrics());
+        }
+
         return DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes);
     }
 

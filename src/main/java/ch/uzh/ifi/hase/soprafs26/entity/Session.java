@@ -112,7 +112,7 @@ public class Session {
 
     public void removeSong(Song song) {
         playlist.remove(song);
-        song.setSession(null);
+        //song.setSession(null);
     }
 
     public void addToPendingInitialSong(User user) {
