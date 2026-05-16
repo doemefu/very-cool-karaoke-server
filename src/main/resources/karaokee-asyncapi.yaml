@@ -27,6 +27,8 @@ channels:
       Broadcast when the current song changes.
       Triggered by: admin skip (POST /sessions/{id}/songs/skip), natural song end,
       or marking song as played (PUT /sessions/{id}/songs/{songId}/played).
+      The payload is always a CurrentSongPayload object; `song` is null
+      when there is no current song (cleared / queue exhausted).
     parameters:
       sessionId:
         $ref: '#/components/parameters/sessionId'
@@ -152,7 +154,7 @@ components:
       name: CurrentSongMessage
       summary: Currently playing song with lyrics
       payload:
-        $ref: '#/components/schemas/SongDTO'
+        $ref: '#/components/schemas/CurrentSongPayload'
 
     VotingRoundMessage:
       name: VotingRoundMessage
@@ -227,6 +229,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserDTO'
+
+    CurrentSongPayload:
+      type: object
+      description: >
+        Wrapper for the current song. `song` is null when there is no
+        active song (e.g. session cleared / queue exhausted).
+      properties:
+        song:
+          allOf:
+            - $ref: '#/components/schemas/SongDTO'
+          nullable: true
+      required:
+        - song
 
     SongDTO:
       type: object
