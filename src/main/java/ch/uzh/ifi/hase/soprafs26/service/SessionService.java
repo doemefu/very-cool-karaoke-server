@@ -158,6 +158,10 @@ public class SessionService {
                     HttpStatus.BAD_REQUEST, "Invalid game pin");
         }
 
+        if (session.getStatus() == SessionStatus.ENDED) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Session has already ended");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, USER_NOT_FOUND));
