@@ -229,4 +229,9 @@ public class VotingService {
                 })
                 .toList();
     }
+
+    @Transactional
+    public void removeSongFromCandidates(Long songId) {
+        votingRoundRepository.deleteCandidatesBySongId(songId);
+    }
 }

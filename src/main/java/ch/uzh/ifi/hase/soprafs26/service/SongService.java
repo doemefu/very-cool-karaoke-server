@@ -170,6 +170,7 @@ public class SongService {
                 .map(s -> s.getId().equals(songId))
                 .orElse(false);
 
+        votingService.removeSongFromCandidates(songToDelete.getId());
         session.removeSong(songToDelete);
         songRepository.delete(songToDelete);
 
