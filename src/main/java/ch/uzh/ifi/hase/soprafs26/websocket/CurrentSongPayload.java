@@ -16,7 +16,7 @@ public class CurrentSongPayload {
         return song;
     }
 
-    public void setSong(SongGetDTO sog) {
+    public void setSong(SongGetDTO song) {
         this.song = song;
     }
 }
