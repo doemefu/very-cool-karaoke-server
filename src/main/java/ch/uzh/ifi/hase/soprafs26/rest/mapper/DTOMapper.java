@@ -14,7 +14,6 @@ import org.mapstruct.factory.Mappers;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -78,7 +77,6 @@ public interface DTOMapper {
     default List<SongGetDTO> sortedByVotes(List<Song> songs, @Context Map<Long, Long> counts) {
         return songs.stream()
                 .map(s -> toSongGetDTO(s, counts))
-                .sorted(Comparator.comparingInt(SongGetDTO::getCurrentVoteCount).reversed())
                 .toList();
     }
 }

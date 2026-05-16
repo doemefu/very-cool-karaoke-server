@@ -338,7 +338,7 @@ class VotingServiceTest {
         when(sessionService.getSessionById(10L)).thenReturn(session);
         votingService.createVotingRound(10L);
 
-        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong), any());
         verify(votingRoundRepository, never()).save(any());
         verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
         verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
@@ -385,7 +385,7 @@ class VotingServiceTest {
         assertEquals(VotingStatus.CLOSED, votingRound.getStatus());
         verify(votingRoundRepository, times(1)).save(votingRound);
 
-        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong), any());
     }
 
     @Test
@@ -396,7 +396,7 @@ class VotingServiceTest {
         votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
 
         verify(votingRoundRepository, never()).save(any());
-        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any(), any());
     }
 
     @Test
@@ -505,7 +505,7 @@ class VotingServiceTest {
 
         votingService.createVotingRound(10L);
 
-        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any(), any());
         verify(votingRoundRepository, never()).save(any());
         verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
         verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
@@ -520,7 +520,7 @@ class VotingServiceTest {
 
         votingService.createVotingRound(10L);
 
-        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any(), any());
         verify(votingRoundRepository, never()).save(any());
     }
 

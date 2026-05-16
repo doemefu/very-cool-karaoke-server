@@ -224,10 +224,10 @@ public class SongService {
     }
 
     @Transactional(readOnly = true)
-    public void broadcastVotingRoundSongWinner(Long sessionId, Song winner) {
+    public void broadcastVotingRoundSongWinner(Long sessionId, Song winner, Map<Long, Long> voteCounts) {
         Session session = sessionService.getSessionById(sessionId);
         Map<Long, Long> emptyVotes = Collections.emptyMap();
-        SongGetDTO nextSong = DTOMapper.INSTANCE.toSongGetDTO(winner, emptyVotes);
+        SongGetDTO nextSong = DTOMapper.INSTANCE.toSongGetDTO(winner, voteCounts);
 
         List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
                 .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
