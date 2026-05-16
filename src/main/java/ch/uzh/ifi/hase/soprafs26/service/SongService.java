@@ -193,6 +193,7 @@ public class SongService {
         promoteNextSong(sessionId, session);
     }
 
+    @Transactional
     public void promoteNextSong(Long sessionId, Session session) {
         Map<Long, Long> emptyVotes = Collections.emptyMap();
         List<Song> unplayedSongs = session.getPlaylist().stream()
