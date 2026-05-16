@@ -11,6 +11,7 @@ import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,16 +36,19 @@ public class SessionService {
     private final SongWebSocketPublisher songWebSocketPublisher;
     private final SessionWebSocketPublisher sessionWebSocketPublisher;
     private final UserService userService;
+    private final SongService songService;
 
     @Autowired
     public SessionService(SessionRepository sessionRepository,
                           UserRepository userRepository,
-                          SongWebSocketPublisher songWebSocketPublisher, SessionWebSocketPublisher sessionWebSocketPublisher, UserService userService) {
+                          SongWebSocketPublisher songWebSocketPublisher, UserService userService,
+                          @Lazy SongService songService, SessionWebSocketPublisher sessionWebSocketPublisher) {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.songWebSocketPublisher = songWebSocketPublisher;
         this.sessionWebSocketPublisher = sessionWebSocketPublisher;
         this.userService = userService;
+        this.songService = songService;
     }
 
     public void verifyIsAdmin(Long sessionId, String token) {
@@ -118,10 +122,13 @@ public class SessionService {
         }
 
         session.setStatus(newStatus);
-        Session saved = sessionRepository.save(session);
+        Session savedSession = sessionRepository.save(session);
+        if (current == SessionStatus.CREATED && newStatus == SessionStatus.ACTIVE) {
+            songService.promoteNextSong(sessionId, session);
+        }
         sessionWebSocketPublisher.broadcastSessionStatus(sessionId,
-                DTOMapper.INSTANCE.convertEntityToSessionGetDTO(saved));
-        return saved;
+                DTOMapper.INSTANCE.convertEntityToSessionGetDTO(savedSession));
+        return savedSession;
     }
 
 

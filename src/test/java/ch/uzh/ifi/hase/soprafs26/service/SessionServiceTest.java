@@ -21,6 +21,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,6 +40,9 @@ class SessionServiceTest {
     @Mock
     private SongWebSocketPublisher songWebSocketPublisher;
 
+    @Mock
+    private SongService songService;
+  
     @Mock
     private SessionWebSocketPublisher sessionWebSocketPublisher;
 
@@ -361,7 +365,18 @@ class SessionServiceTest {
 
         assertEquals(404, ex.getStatusCode().value());
     }
+  
+    @Test
+    void updateSessionStatus_createdToActive_callsPromoteNextSongAndPersistsActive() {
+        session.setStatus(SessionStatus.CREATED);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
 
+        Session result = sessionService.updateSessionStatus(10L, SessionStatus.ACTIVE, 1L);
+
+        assertEquals(SessionStatus.ACTIVE, result.getStatus());
+        verify(songService, times(1)).promoteNextSong(eq(10L), eq(session));
+    }
 
     @Test
     void updateSessionStatus_broadcastsStatusViaWebSocket() {
