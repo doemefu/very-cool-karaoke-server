@@ -6,7 +6,6 @@ import ch.uzh.ifi.hase.soprafs26.constant.VotingStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -44,8 +43,8 @@ class RestDTOTest {
         assertEquals(a, a);
         assertEquals(a, b);
         assertNotEquals(a, c);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -100,8 +99,8 @@ class RestDTOTest {
         assertEquals(a, a);
         assertEquals(a, b);
         assertNotEquals(a, c);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -136,8 +135,8 @@ class RestDTOTest {
 
         assertEquals(a, a);
         assertEquals(a, b);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -173,8 +172,8 @@ class RestDTOTest {
         assertEquals(a, a);
         assertEquals(a, b);
         assertNotEquals(a, c);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -218,8 +217,8 @@ class RestDTOTest {
 
         assertEquals(a, a);
         assertEquals(a, b);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -237,8 +236,8 @@ class RestDTOTest {
 
         assertEquals(a, a);
         assertEquals(a, b);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -284,8 +283,8 @@ class RestDTOTest {
 
         assertEquals(a, a);
         assertEquals(a, b);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -321,8 +320,8 @@ class RestDTOTest {
 
         assertEquals(a, a);
         assertEquals(a, b);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -358,8 +357,8 @@ class RestDTOTest {
 
         assertEquals(a, a);
         assertEquals(a, b);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -380,8 +379,8 @@ class RestDTOTest {
         assertEquals(a, a);
         assertEquals(a, b);
         assertNotEquals(a, c);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -417,8 +416,8 @@ class RestDTOTest {
 
         assertEquals(a, a);
         assertEquals(a, b);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());
@@ -436,8 +435,8 @@ class RestDTOTest {
         assertEquals(a, a);
         assertEquals(a, b);
         assertNotEquals(a, c);
-        assertNotEquals(a, null);
-        assertNotEquals(a, new Object());
+        assertNotEquals(null, a);
+        assertNotEquals(new Object(), a);
         assertEquals(a.hashCode(), b.hashCode());
 
         assertNotNull(a.toString());

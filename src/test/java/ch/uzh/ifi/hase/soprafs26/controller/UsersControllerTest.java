@@ -141,7 +141,8 @@ class UsersControllerTest {
     private String asJsonString(final Object object) {
         try {
             return new ObjectMapper().writeValueAsString(object);
-        } catch (JacksonException e) {
+        }
+        catch (JacksonException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     String.format("The request body could not be created.%s", e));
         }

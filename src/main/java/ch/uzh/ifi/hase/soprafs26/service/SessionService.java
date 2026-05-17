@@ -6,7 +6,9 @@ import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.UserGetDTO;
-import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
 
 import java.util.*;
 
@@ -190,7 +190,7 @@ public class SessionService {
                             DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes));
                     songWebSocketPublisher.broadcastLyrics(sessionId, s.getLyrics());
                 });
-        
+
         List<UserGetDTO> participantDTOs = saved.getParticipants().stream()
                 .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
                 .toList();
@@ -235,7 +235,7 @@ public class SessionService {
                 .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
                 .toList();
         sessionWebSocketPublisher.broadcastParticipants(sessionId, participantDTOs);
-        
+
         log.debug("User {} left session {}", userId, sessionId);
     }
 

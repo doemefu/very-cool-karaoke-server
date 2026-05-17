@@ -168,7 +168,7 @@ public class SongPostDTO {
 
     @Override
     public String toString() {
-        String sb = "class SongPostDTO {\n" +
+        return "class SongPostDTO {\n" +
                 "    spotifyId: " + toIndentedString(spotifyId) + "\n" +
                 "    title: " + toIndentedString(title) + "\n" +
                 "    artist: " + toIndentedString(artist) + "\n" +
@@ -176,7 +176,6 @@ public class SongPostDTO {
                 "    albumName: " + toIndentedString(albumName) + "\n" +
                 "    durationMs: " + toIndentedString(durationMs) + "\n" +
                 "}";
-        return sb;
     }
 
     /**

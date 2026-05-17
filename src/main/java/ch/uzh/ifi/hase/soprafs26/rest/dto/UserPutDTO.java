@@ -79,11 +79,10 @@ public class UserPutDTO {
 
     @Override
     public String toString() {
-        String sb = "class UserPutDTO {\n" +
+        return "class UserPutDTO {\n" +
                 "    newPassword: " + "*" + "\n" +
                 "    oldPassword: " + "*" + "\n" +
                 "}";
-        return sb;
     }
 
     /**

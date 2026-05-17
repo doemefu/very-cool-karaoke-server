@@ -91,11 +91,10 @@ public class SessionPostDTO {
 
     @Override
     public String toString() {
-        String sb = "class SessionPostDTO {\n" +
+        return "class SessionPostDTO {\n" +
                 "    name: " + toIndentedString(name) + "\n" +
                 "    description: " + toIndentedString(description) + "\n" +
                 "}";
-        return sb;
     }
 
     /**

@@ -52,7 +52,8 @@ public class ReactionMessageHandler {
         ReactionType reactionType;
         try {
             reactionType = ReactionType.fromValue(type);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unknown reaction type: " + type);
         }
 

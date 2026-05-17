@@ -5,9 +5,9 @@ import ch.uzh.ifi.hase.soprafs26.entity.*;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
-import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
+import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,14 +15,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.context.ApplicationContext;
 
-import java.time.LocalDateTime;
 import java.time.Instant;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 

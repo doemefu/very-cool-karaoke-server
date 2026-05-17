@@ -2,12 +2,13 @@ package ch.uzh.ifi.hase.soprafs26.service;
 
 import ch.uzh.ifi.hase.soprafs26.constant.SessionStatus;
 import ch.uzh.ifi.hase.soprafs26.entity.Session;
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
 import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
-import ch.uzh.ifi.hase.soprafs26.entity.Song;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,12 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Optional;
 import java.util.Set;
 
-import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
-
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,7 +35,7 @@ class SessionServiceTest {
 
     @Mock
     private SongService songService;
-  
+
     @Mock
     private SessionWebSocketPublisher sessionWebSocketPublisher;
 
@@ -378,7 +375,7 @@ class SessionServiceTest {
 
         assertEquals(404, ex.getStatusCode().value());
     }
-  
+
     @Test
     void updateSessionStatus_createdToActive_callsPromoteNextSongAndPersistsActive() {
         session.setStatus(SessionStatus.CREATED);

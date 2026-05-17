@@ -22,11 +22,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 class SongServiceTest {
 
@@ -189,9 +185,12 @@ class SongServiceTest {
         Session session = new Session();
         session.setId(1L);
 
-        Song current = new Song(); current.setPerformed(false);
-        Song song1 = new Song(); song1.setPerformed(false);
-        Song song2 = new Song(); song2.setPerformed(false);
+        Song current = new Song();
+        current.setPerformed(false);
+        Song song1 = new Song();
+        song1.setPerformed(false);
+        Song song2 = new Song();
+        song2.setPerformed(false);
         session.getPlaylist().addAll(List.of(current, song1, song2));
 
         when(sessionService.getSessionById(1L)).thenReturn(session);

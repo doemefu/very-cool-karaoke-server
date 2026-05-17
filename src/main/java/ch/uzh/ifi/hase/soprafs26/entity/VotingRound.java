@@ -33,7 +33,7 @@ public class VotingRound {
     @Column(nullable = false)
     private LocalDateTime startsAt;
 
-    @Column(nullable = true)
+    @Column
     private LocalDateTime endsAt;
 
     @ManyToMany(fetch = FetchType.LAZY)

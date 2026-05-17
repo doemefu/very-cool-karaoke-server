@@ -296,7 +296,7 @@ public class SongGetDTO {
 
     @Override
     public String toString() {
-        String sb = "class SongGetDTO {\n" +
+        return "class SongGetDTO {\n" +
                 "    id: " + toIndentedString(id) + "\n" +
                 "    spotifyId: " + toIndentedString(spotifyId) + "\n" +
                 "    title: " + toIndentedString(title) + "\n" +
@@ -310,7 +310,6 @@ public class SongGetDTO {
                 "    performed: " + toIndentedString(performed) + "\n" +
                 "    addedBy: " + toIndentedString(addedBy) + "\n" +
                 "}";
-        return sb;
     }
 
     /**

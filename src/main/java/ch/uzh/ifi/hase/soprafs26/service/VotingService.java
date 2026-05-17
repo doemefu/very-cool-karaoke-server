@@ -8,19 +8,18 @@ import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
 import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.context.ApplicationContext;
-
-import java.time.ZoneOffset;
-import java.util.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -92,7 +91,8 @@ public class VotingService {
         vote.setVotedSong(song);
         try {
             voteRepository.saveAndFlush(vote);
-        } catch (DataIntegrityViolationException ex) {
+        }
+        catch (DataIntegrityViolationException ex) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already voted");
         }
 

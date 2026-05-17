@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class SongsController implements SongsApi {
@@ -57,11 +56,9 @@ public class SongsController implements SongsApi {
     // Returns 200 + SongGetDTO, 204 if nothing is playing, 404 if session not found
     @Override
     public ResponseEntity<SongGetDTO> sessionsSessionIdSongsCurrentGet(Long sessionId) {
-        Optional<SongGetDTO> current = songService.getCurrentSong(sessionId);
-        if (current.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(current.get());
+        return songService.getCurrentSong(sessionId)
+                .<ResponseEntity<SongGetDTO>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     // POST /sessions/{sessionId}/songs/skip — Skip current song, admin only (S7)

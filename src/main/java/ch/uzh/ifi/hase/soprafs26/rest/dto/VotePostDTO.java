@@ -67,10 +67,9 @@ public class VotePostDTO {
 
     @Override
     public String toString() {
-        String sb = "class VotePostDTO {\n" +
+        return "class VotePostDTO {\n" +
                 "    songId: " + toIndentedString(songId) + "\n" +
                 "}";
-        return sb;
     }
 
     /**
