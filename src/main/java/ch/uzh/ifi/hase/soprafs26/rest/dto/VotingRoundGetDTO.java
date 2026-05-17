@@ -34,6 +34,8 @@ public class VotingRoundGetDTO {
     @Valid
     private List<@Valid SongGetDTO> candidates = new ArrayList<>();
 
+    private Long winnerId;
+
     public VotingRoundGetDTO id(Long id) {
         this.id = id;
         return this;
@@ -166,6 +168,16 @@ public class VotingRoundGetDTO {
 
     public void setCandidates(List<@Valid SongGetDTO> candidates) {
         this.candidates = candidates;
+    }
+
+    @Schema(name = "winnerId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @JsonProperty("winnerId")
+    public Long getWinnerId() {
+        return winnerId;
+    }
+
+    public void setWinnerId(Long winnerId) {
+        this.winnerId = winnerId;
     }
 
     @Override

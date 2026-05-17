@@ -205,7 +205,6 @@ public class VotingService {
         votingRoundRepository.save(round);
 
         Map<Long, Long> finalCounts = getVoteCounts(round);
-        votingWebSocketPublisher.broadcastVotingRound(sessionId, DTOMapper.INSTANCE.toVotingRoundGetDTO(round, finalCounts));
 
         long maxVotes = finalCounts.values().stream().max(Long::compare).orElse(0L);
 
@@ -214,6 +213,11 @@ public class VotingService {
                 .toList();
 
         Song votingRoundSongWinner = winnerCandidates.get(random.nextInt(winnerCandidates.size()));
+
+        VotingRoundGetDTO closedRoundDTO = DTOMapper.INSTANCE.toVotingRoundGetDTO(round, finalCounts);
+        closedRoundDTO.setWinnerId(votingRoundSongWinner.getId());
+        votingWebSocketPublisher.broadcastVotingRound(sessionId, closedRoundDTO);
+
         moveWinnerToFrontOfQueue(sessionId, votingRoundSongWinner);
         songService.broadcastVotingRoundSongWinner(sessionId, votingRoundSongWinner, finalCounts);
     }
