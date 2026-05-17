@@ -1207,6 +1207,11 @@
             "items" : {
               "$ref" : "#/components/schemas/SongGetDTO"
             }
+          },
+          "winnerId" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "ID of the winning candidate once the round is CLOSED. Null while the round is OPEN."
           }
         }
       },
