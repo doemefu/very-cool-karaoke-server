@@ -321,6 +321,9 @@ components:
           description: Candidates with current vote counts, in playlist order
           items:
             $ref: '#/components/schemas/SongDTO'
+        winnerId:
+          type: integer
+          description: ID of the winning candidate once the round is CLOSED. Null while the round is OPEN.
 
     LyricsPayload:
       type: object

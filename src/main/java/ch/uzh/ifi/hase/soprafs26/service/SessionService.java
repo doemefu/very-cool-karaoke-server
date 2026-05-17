@@ -128,7 +128,8 @@ public class SessionService {
         }
         // requiresSongSelection is a per-user field; it is intentionally null here
         // since this is a broadcast to all subscribers. Clients needing this flag
-        // should read it from the REST response (GET /sessions/{id}/participants).
+        // should read it from POST /sessions/{id}/participants (join/rejoin),
+        // which returns a SessionGetDTO with requiresSongSelection set per caller.
         sessionWebSocketPublisher.broadcastSessionStatus(sessionId,
                 DTOMapper.INSTANCE.convertEntityToSessionGetDTO(savedSession));
         return savedSession;
