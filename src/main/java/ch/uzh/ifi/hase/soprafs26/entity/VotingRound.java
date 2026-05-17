@@ -43,6 +43,7 @@ public class VotingRound {
             inverseJoinColumns = @JoinColumn(name = "song_id")
     )
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @OrderBy("id ASC")
     private List<Song> candidates = new ArrayList<>();
 
     @OneToMany(mappedBy = "votingRound", cascade = CascadeType.ALL, orphanRemoval = true)

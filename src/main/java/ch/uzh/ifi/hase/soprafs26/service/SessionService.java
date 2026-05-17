@@ -126,6 +126,9 @@ public class SessionService {
         if (current == SessionStatus.CREATED && newStatus == SessionStatus.ACTIVE) {
             songService.promoteNextSong(sessionId, session);
         }
+        // requiresSongSelection is a per-user field; it is intentionally null here
+        // since this is a broadcast to all subscribers. Clients needing this flag
+        // should read it from the REST response (GET /sessions/{id}/participants).
         sessionWebSocketPublisher.broadcastSessionStatus(sessionId,
                 DTOMapper.INSTANCE.convertEntityToSessionGetDTO(savedSession));
         return savedSession;

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Setter
 @Getter
@@ -55,6 +56,6 @@ public class Song {
     // to mark the song as performed
     public void markPerformed() {
         this.performed = true;
-        this.playedAt = LocalDateTime.now();
+        this.playedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 }

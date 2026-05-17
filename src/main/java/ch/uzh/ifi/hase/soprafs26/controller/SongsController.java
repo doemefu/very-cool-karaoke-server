@@ -3,8 +3,8 @@ package ch.uzh.ifi.hase.soprafs26.controller;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
+import ch.uzh.ifi.hase.soprafs26.service.SessionService;
 import ch.uzh.ifi.hase.soprafs26.service.SongService;
-import ch.uzh.ifi.hase.soprafs26.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +17,12 @@ import java.util.List;
 public class SongsController implements SongsApi {
     private static final String TOKEN_HEADER = "token";
     private final SongService songService;
-    private final UserService userService;
+    private final SessionService sessionService;
     private final HttpServletRequest request;
 
-    SongsController(SongService songService, UserService userService, HttpServletRequest request) {
+    SongsController(SongService songService, SessionService sessionService, HttpServletRequest request) {
         this.songService = songService;
-        this.userService = userService;
+        this.sessionService = sessionService;
         this.request = request;
     }
 
@@ -75,7 +75,7 @@ public class SongsController implements SongsApi {
     @Override
     public ResponseEntity<Void> sessionsSessionIdSongsNextPost(Long sessionId) {
         String token = request.getHeader(TOKEN_HEADER);
-        userService.getUserByToken(token);
+        sessionService.verifyIsAdmin(sessionId, token);
         songService.nextSong(sessionId);
         return ResponseEntity.noContent().build();
     }
