@@ -266,6 +266,13 @@ class SessionServiceTest {
         session.addParticipant(participant);
         session.setStatus(SessionStatus.ACTIVE);
 
+        // Participant already contributed a song before the session started
+        Song contributed = new Song();
+        contributed.setId(501L);
+        contributed.setAddedBy(participant);
+        contributed.setSession(session);
+        session.addSong(contributed);
+
         when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
         when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
         when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
@@ -273,7 +280,7 @@ class SessionServiceTest {
         sessionService.joinSession(10L, "482910", 2L);
 
         assertFalse(session.isPendingInitialSong(participant),
-                "Rejoin after the session has started must NOT re-flag pendingInitialSong");
+                "Rejoin after the session has started must NOT re-flag pendingInitialSong if song was already contributed");
     }
 
     // leaveSession
