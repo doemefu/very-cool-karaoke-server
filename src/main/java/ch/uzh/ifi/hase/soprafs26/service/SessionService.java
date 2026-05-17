@@ -123,7 +123,7 @@ public class SessionService {
 
         session.setStatus(newStatus);
         Session savedSession = sessionRepository.save(session);
-        if (current == SessionStatus.CREATED && newStatus == SessionStatus.ACTIVE) {
+        if (current == SessionStatus.CREATED) {
             songService.promoteNextSong(sessionId, session);
         }
         sessionWebSocketPublisher.broadcastSessionStatus(sessionId,
@@ -159,7 +159,7 @@ public class SessionService {
         }
 
         if (session.getStatus() == SessionStatus.ENDED) {
-            throw new ResponseStatusException(HttpStatus.GONE, "Session has already ended");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session has already ended");
         }
 
         User user = userRepository.findById(userId)
@@ -281,16 +281,16 @@ public class SessionService {
         return session.isPendingInitialSong(user);
     }
 
-    public void markInitialSongAdded(Long sessionId, Long userId) {
-        Session session = getSessionById(sessionId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, USER_NOT_FOUND));
-        session.removeFromPendingInitialSong(user);
-        sessionRepository.save(session);
-        log.debug("User {} fulfilled initial song requirement for session {}",
-                userId, sessionId);
-    }
+//    public void markInitialSongAdded(Long sessionId, Long userId) {
+//        Session session = getSessionById(sessionId);
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new ResponseStatusException(
+//                        HttpStatus.NOT_FOUND, USER_NOT_FOUND));
+//        session.removeFromPendingInitialSong(user);
+//        sessionRepository.save(session);
+//        log.debug("User {} fulfilled initial song requirement for session {}",
+//                userId, sessionId);
+//    }
 
 
     /**

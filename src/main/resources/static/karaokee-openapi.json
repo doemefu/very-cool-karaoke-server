@@ -761,7 +761,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Voting round with candidates sorted by vote count",
+            "description": "Voting round with candidates and their current vote counts (playlist order preserved)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1203,7 +1203,7 @@
           },
           "candidates": {
             "type": "array",
-            "description": "Sorted descending by currentVoteCount",
+            "description": "Candidates with current vote counts, in playlist order",
             "items": {
               "$ref": "#/components/schemas/SongGetDTO"
             }
