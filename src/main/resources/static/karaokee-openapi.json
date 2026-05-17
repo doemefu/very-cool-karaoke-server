@@ -604,7 +604,7 @@
         "tags" : [
           "Songs"
         ],
-        "summary" : "Skip the current song – admin only (S7)",
+        "summary" : "Skip the current song – admin only (S7) – not yet implemented",
         "description" : "Advances the queue to the next song without waiting for the current one to finish.\nTriggers two WebSocket broadcasts:\n- /topic/sessions/{sessionId}/currentSong with the new current song\n- /topic/sessions/{sessionId}/votingRound when a new voting round starts automatically\n",
         "parameters" : [
           {
@@ -627,6 +627,9 @@
           },
           "404" : {
             "description" : "Session not found"
+          },
+          "501" : {
+            "description" : "Not yet implemented"
           }
         }
       }
@@ -706,12 +709,6 @@
         "responses" : {
           "204" : {
             "description" : "No-op; song advancement is handled by POST /songs/next"
-          },
-          "403" : {
-            "description" : "Only admin can mark songs as played"
-          },
-          "404" : {
-            "description" : "Song or session not found"
           }
         }
       }
@@ -827,7 +824,7 @@
         "tags" : [
           "Reactions"
         ],
-        "summary" : "Send a live reaction during a performance (S9)",
+        "summary" : "Send a live reaction during a performance (S9) – not yet implemented",
         "parameters" : [
           {
             "$ref" : "#/components/parameters/sessionId"
@@ -852,6 +849,9 @@
           },
           "404" : {
             "description" : "Session not found"
+          },
+          "501" : {
+            "description" : "Not yet implemented"
           }
         }
       }

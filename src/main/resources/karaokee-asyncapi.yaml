@@ -86,6 +86,19 @@ channels:
       queue:
         $ref: '#/components/messages/QueueMessage'
 
+  /topic/sessions/{sessionId}/lyrics:
+    address: /topic/sessions/{sessionId}/lyrics
+    description: >
+      Broadcast when a new song becomes current. Contains the song's lyrics (null if unavailable).
+      Triggered by: POST /sessions/{id}/songs (first song added), POST /sessions/{id}/songs/next,
+      POST /sessions/{id}/songs/skip.
+    parameters:
+      sessionId:
+        $ref: '#/components/parameters/sessionId'
+    messages:
+      lyrics:
+        $ref: '#/components/messages/LyricsMessage'
+
   /topic/sessions/{sessionId}/participants:
     address: /topic/sessions/{sessionId}/participants
     description: >
@@ -132,6 +145,12 @@ operations:
     channel:
       $ref: '#/channels/~1topic~1sessions~1{sessionId}~1queue'
     summary: Client receives updated song queue
+
+  receiveLyrics:
+    action: receive
+    channel:
+      $ref: '#/channels/~1topic~1sessions~1{sessionId}~1lyrics'
+    summary: Client receives lyrics for the current song
 
   receiveParticipants:
     action: receive
@@ -181,6 +200,12 @@ components:
         type: array
         items:
           $ref: '#/components/schemas/SongDTO'
+
+    LyricsMessage:
+      name: LyricsMessage
+      summary: Lyrics for the currently playing song
+      payload:
+        $ref: '#/components/schemas/LyricsPayload'
 
     ParticipantsMessage:
       name: ParticipantsMessage
@@ -293,9 +318,17 @@ components:
           format: date-time
         candidates:
           type: array
-          description: Sorted descending by currentVoteCount
+          description: Candidates with current vote counts, in playlist order
           items:
             $ref: '#/components/schemas/SongDTO'
+
+    LyricsPayload:
+      type: object
+      properties:
+        lyrics:
+          type: string
+          nullable: true
+          description: Full song lyrics, or null if not available
 
     ReactionDTO:
       type: object
