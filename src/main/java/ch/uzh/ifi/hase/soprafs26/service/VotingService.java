@@ -139,7 +139,7 @@ public class VotingService {
             return;
         }
         if (playlist.size() == 1) {
-            songService.broadcastVotingRoundSongWinner(sessionId, playlist.get(0));
+            songService.broadcastVotingRoundSongWinner(sessionId, playlist.get(0), Collections.emptyMap());
             return;
         }
 
@@ -215,7 +215,7 @@ public class VotingService {
 
         Song votingRoundSongWinner = winnerCandidates.get(random.nextInt(winnerCandidates.size()));
         moveWinnerToFrontOfQueue(sessionId, votingRoundSongWinner);
-        songService.broadcastVotingRoundSongWinner(sessionId, votingRoundSongWinner);
+        songService.broadcastVotingRoundSongWinner(sessionId, votingRoundSongWinner, finalCounts);
     }
 
     @Transactional(readOnly = true)

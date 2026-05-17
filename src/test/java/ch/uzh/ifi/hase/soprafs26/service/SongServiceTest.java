@@ -16,6 +16,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -442,7 +443,7 @@ class SongServiceTest {
 
         when(sessionService.getSessionById(5L)).thenReturn(session);
 
-        songService.broadcastVotingRoundSongWinner(5L, winner);
+        songService.broadcastVotingRoundSongWinner(5L, winner, Collections.emptyMap());
 
         verify(songWebSocketPublisher).broadcastCurrentSong(eq(5L), argThat(dto -> dto != null && "Winner Song".equals(dto.getTitle())));
         verify(songWebSocketPublisher).broadcastQueue(eq(5L), argThat(list -> list.size() == 1));

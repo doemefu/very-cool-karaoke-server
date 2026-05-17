@@ -5,8 +5,8 @@ import ch.uzh.ifi.hase.soprafs26.entity.Session;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
-import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
+import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.entity.Song;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyList;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
 
@@ -38,13 +37,13 @@ class SessionServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private SongWebSocketPublisher songWebSocketPublisher;
-
-    @Mock
     private SongService songService;
   
     @Mock
     private SessionWebSocketPublisher sessionWebSocketPublisher;
+
+    @Mock
+    private SongWebSocketPublisher songWebSocketPublisher;
 
     @InjectMocks
     private SessionService sessionService;
@@ -183,8 +182,22 @@ class SessionServiceTest {
                 () -> sessionService.joinSession(10L, "000000", 2L));
 
         assertEquals(400, ex.getStatusCode().value());
+        assert ex.getReason() != null;
         assertTrue(ex.getReason().toLowerCase().contains("invalid game pin"));
         // Must not proceed to user lookup or save when PIN is wrong
+        verify(userRepository, never()).findById(any());
+        verify(sessionRepository, never()).save(any());
+    }
+
+    @Test
+    void joinSession_endedSession_throwsNotFound() {
+        session.setStatus(SessionStatus.ENDED);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> sessionService.joinSession(10L, "482910", 2L));
+
+        assertEquals(404, ex.getStatusCode().value());
         verify(userRepository, never()).findById(any());
         verify(sessionRepository, never()).save(any());
     }
