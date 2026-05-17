@@ -17,7 +17,8 @@ public interface VotingRoundRepository extends JpaRepository<VotingRound, Long> 
     List<VotingRound> findBySessionAndStatus(Session session, VotingStatus status);
     @Query("SELECT DISTINCT vr FROM VotingRound vr LEFT JOIN FETCH vr.candidates WHERE vr.id = :id")
     Optional<VotingRound> findByIdWithCandidates(@Param("id") Long id);
-    List<VotingRound> findBySessionOrderByStartsAtAsc(Session session);
+    @Query("SELECT DISTINCT vr FROM VotingRound vr LEFT JOIN FETCH vr.candidates WHERE vr.session = :session ORDER BY vr.startsAt ASC")
+    List<VotingRound> findBySessionWithCandidatesOrderByStartsAtAsc(@Param("session") Session session);
 
     @Modifying
     @Query(value = "DELETE FROM voting_round_candidates WHERE song_id = :songId", nativeQuery = true)

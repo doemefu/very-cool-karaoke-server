@@ -177,6 +177,7 @@ public class SessionService {
 
         Map<Long, Long> emptyVotes = new HashMap<>();
         List<SongGetDTO> queue = saved.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);

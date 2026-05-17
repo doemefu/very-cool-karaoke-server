@@ -19,13 +19,13 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Optional;
 import java.util.Set;
 
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-
-import static org.mockito.ArgumentMatchers.anyList;
-import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceTest {

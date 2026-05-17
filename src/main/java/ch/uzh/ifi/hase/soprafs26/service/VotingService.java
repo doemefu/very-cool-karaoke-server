@@ -221,7 +221,7 @@ public class VotingService {
     @Transactional(readOnly = true)
     public List<VotingRoundGetDTO> getRoundsForSession(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
-        List<VotingRound> rounds = votingRoundRepository.findBySessionOrderByStartsAtAsc(session);
+        List<VotingRound> rounds = votingRoundRepository.findBySessionWithCandidatesOrderByStartsAtAsc(session);
         return rounds.stream()
                 .map(r -> {
                     Map<Long, Long> counts = getVoteCounts(r);

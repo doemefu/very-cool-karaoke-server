@@ -402,7 +402,7 @@ class VotingServiceTest {
     @Test
     void getRoundsForSession_noRounds_returnsEmptyList() {
         when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.findBySessionOrderByStartsAtAsc(session))
+        when(votingRoundRepository.findBySessionWithCandidatesOrderByStartsAtAsc(session))
                 .thenReturn(List.of());
 
         List<VotingRoundGetDTO> result = votingService.getRoundsForSession(10L);
@@ -423,7 +423,7 @@ class VotingServiceTest {
         earlier.getCandidates().add(candidateSong);
 
         when(sessionService.getSessionById(10L)).thenReturn(session);
-        when(votingRoundRepository.findBySessionOrderByStartsAtAsc(session))
+        when(votingRoundRepository.findBySessionWithCandidatesOrderByStartsAtAsc(session))
                 .thenReturn(List.of(earlier, votingRound));
 
         VoteRepository.SongVoteCount earlierCount = mock(VoteRepository.SongVoteCount.class);
@@ -452,7 +452,7 @@ class VotingServiceTest {
                 () -> votingService.getRoundsForSession(999L));
 
         assertEquals(404, ex.getStatusCode().value());
-        verify(votingRoundRepository, never()).findBySessionOrderByStartsAtAsc(any());
+        verify(votingRoundRepository, never()).findBySessionWithCandidatesOrderByStartsAtAsc(any());
     }
 
     @Test
