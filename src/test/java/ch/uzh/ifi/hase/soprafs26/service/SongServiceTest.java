@@ -9,7 +9,6 @@ import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -17,16 +16,13 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 class SongServiceTest {
 
@@ -189,9 +185,12 @@ class SongServiceTest {
         Session session = new Session();
         session.setId(1L);
 
-        Song current = new Song(); current.setPerformed(false);
-        Song song1 = new Song(); song1.setPerformed(false);
-        Song song2 = new Song(); song2.setPerformed(false);
+        Song current = new Song();
+        current.setPerformed(false);
+        Song song1 = new Song();
+        song1.setPerformed(false);
+        Song song2 = new Song();
+        song2.setPerformed(false);
         session.getPlaylist().addAll(List.of(current, song1, song2));
 
         when(sessionService.getSessionById(1L)).thenReturn(session);
@@ -249,7 +248,6 @@ class SongServiceTest {
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
     void deleteSongFromQueue_success_removesQueuedSongAndBroadcasts() {
         User admin = new User();
         admin.setId(1L);
@@ -289,7 +287,6 @@ class SongServiceTest {
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
     void deleteSongFromQueue_success_deletesCurrentSongAndBroadcastsNew() {
         User admin = new User();
         admin.setId(1L);
@@ -327,8 +324,7 @@ class SongServiceTest {
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
-    void deleteSongFromQueue_deletesCurrentSong_multipleRemaining_broadcastsNullCurrentSong() {
+    void deleteSongFromQueue_deletesCurrentSong_multipleRemaining_opensVotingRound() {
         User admin = new User();
         admin.setId(1L);
 
@@ -363,13 +359,11 @@ class SongServiceTest {
 
         songService.deleteSongFromQueue(1L, 10L, "test-token");
 
-        // 2+ songs remain — broadcast null current song (voting round TODO)
-        verify(songWebSocketPublisher).broadcastCurrentSong(eq(1L), isNull());
-        verify(songWebSocketPublisher).broadcastQueue(eq(1L), argThat(list -> list.size() == 2));
+        verify(votingService, times(1)).createVotingRound(1L);
+        verify(songWebSocketPublisher, never()).broadcastCurrentSong(anyLong(), any());
     }
 
     @Test
-    @Disabled("Deferred until nextSong() refactoring in the next ticket")
     void deleteSongFromQueue_deletesCurrentSong_noneRemaining_broadcastsNull() {
         User admin = new User();
         admin.setId(1L);
@@ -448,7 +442,7 @@ class SongServiceTest {
 
         when(sessionService.getSessionById(5L)).thenReturn(session);
 
-        songService.broadcastVotingRoundSongWinner(5L, winner);
+        songService.broadcastVotingRoundSongWinner(5L, winner, Collections.emptyMap());
 
         verify(songWebSocketPublisher).broadcastCurrentSong(eq(5L), argThat(dto -> dto != null && "Winner Song".equals(dto.getTitle())));
         verify(songWebSocketPublisher).broadcastQueue(eq(5L), argThat(list -> list.size() == 1));

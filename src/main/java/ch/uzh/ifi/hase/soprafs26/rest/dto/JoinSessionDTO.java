@@ -67,10 +67,9 @@ public class JoinSessionDTO {
 
     @Override
     public String toString() {
-        String sb = "class JoinSessionDTO {\n" +
+        return "class JoinSessionDTO {\n" +
                 "    gamePin: " + toIndentedString(gamePin) + "\n" +
                 "}";
-        return sb;
     }
 
     /**

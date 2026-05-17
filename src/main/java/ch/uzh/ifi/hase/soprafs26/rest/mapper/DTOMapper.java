@@ -14,7 +14,6 @@ import org.mapstruct.factory.Mappers;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +48,7 @@ public interface DTOMapper {
     @Mapping(source = "admin", target = "admin")
     @Mapping(source = "participants", target = "participants")
     @Mapping(source = "createdAt", target = "createdAt")
+    @Mapping(target = "requiresSongSelection", ignore = true)
     SessionGetDTO convertEntityToSessionGetDTO(Session session);
 
     default OffsetDateTime map(LocalDateTime localDateTime) {
@@ -64,21 +64,21 @@ public interface DTOMapper {
     @Mapping(source = "token", target = "token")
     UserTokenDTO convertEntityToUserTokenDTO(User user);
 
-    @Mapping(target = "status",      source = "round.status")
-    @Mapping(target = "startedAt",   source = "round.startsAt")
-    @Mapping(target = "endsAt",      source = "round.endsAt")
-    @Mapping(target = "candidates", source = "candidates", qualifiedByName = "sortedByVotes")
+    @Mapping(target = "status", source = "round.status")
+    @Mapping(target = "startedAt", source = "round.startsAt")
+    @Mapping(target = "endsAt", source = "round.endsAt")
+    @Mapping(target = "candidates", source = "candidates", qualifiedByName = "candidatesWithVoteCounts")
+    @Mapping(target = "roundNumber", ignore = true)
     VotingRoundGetDTO toVotingRoundGetDTO(VotingRound round, @Context Map<Long, Long> counts);
 
     @Mapping(target = "currentVoteCount", expression = "java(counts.getOrDefault(song.getId(), 0L).intValue())")
     @Mapping(target = "durationSeconds", expression = "java(song.getDurationMs() != null ? song.getDurationMs() / 1000 : null)")
     SongGetDTO toSongGetDTO(Song song, @Context Map<Long, Long> counts);
 
-    @Named("sortedByVotes")
-    default List<SongGetDTO> sortedByVotes(List<Song> songs, @Context Map<Long, Long> counts) {
+    @Named("candidatesWithVoteCounts")
+    default List<SongGetDTO> candidatesWithVoteCounts(List<Song> songs, @Context Map<Long, Long> counts) {
         return songs.stream()
                 .map(s -> toSongGetDTO(s, counts))
-                .sorted(Comparator.comparingInt(SongGetDTO::getCurrentVoteCount).reversed())
                 .toList();
     }
 }

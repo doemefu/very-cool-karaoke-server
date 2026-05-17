@@ -24,6 +24,8 @@ import java.util.stream.IntStream;
 @Service
 public class SongService {
 
+    private static final Map<Long, Long> EMPTY_VOTES = Collections.emptyMap();
+
     private final SpotifyService spotifyService;
     private final LyricsService lyricsService;
     private final SongRepository songRepository;
@@ -95,16 +97,21 @@ public class SongService {
 
         session.addSong(song); // update in-memory list for broadcast
 
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
-
         // Broadcast updated queue (no votes yet → empty counts map)
         List<SongGetDTO> queue = session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, EMPTY_VOTES))
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);
 
-        return DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes);
+        // If this is the only unplayed song, the queue was empty before — promote it as currentSong
+        if (queue.size() == 1) {
+            SongGetDTO songDTO = DTOMapper.INSTANCE.toSongGetDTO(song, EMPTY_VOTES);
+            songWebSocketPublisher.broadcastCurrentSong(sessionId, songDTO);
+            songWebSocketPublisher.broadcastLyrics(sessionId, song.getLyrics());
+        }
+
+        return DTOMapper.INSTANCE.toSongGetDTO(song, EMPTY_VOTES);
     }
 
     /**
@@ -115,10 +122,6 @@ public class SongService {
         return lyricsCache.getOrDefault(spotifyId, Optional.empty()).orElse(null);
     }
 
-    Map<String, Optional<String>> getLyricsCache() {
-        return Map.copyOf(lyricsCache);
-    }
-
     void cacheLyrics(String spotifyId, String lyrics) {
         lyricsCache.put(spotifyId, Optional.ofNullable(lyrics));
     }
@@ -126,22 +129,18 @@ public class SongService {
     @Transactional(readOnly = true)
     public Optional<SongGetDTO> getCurrentSong(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
-
         return session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .findFirst()
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes));
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, EMPTY_VOTES));
     }
 
     @Transactional(readOnly = true)
     public List<SongGetDTO> getQueue(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
-
         return session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
-                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
+                .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, EMPTY_VOTES))
                 .toList();
     }
 
@@ -157,45 +156,60 @@ public class SongService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Song not found in this session");
         }
 
+        boolean isCurrentSong = session.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                .findFirst()
+                .map(s -> s.getId().equals(songId))
+                .orElse(false);
+
+        votingService.removeSongFromCandidates(songToDelete.getId());
         session.removeSong(songToDelete);
         songRepository.delete(songToDelete);
 
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
-        List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
-                .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
-                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes))
-                .toList();
-
-        // TODO: Next ticket will refactor nextSong() function where as the method extracted will be used here
-        songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        if (isCurrentSong) {
+            promoteNextSong(sessionId, session);
+        }
+        else {
+            List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
+                    .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
+                    .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, EMPTY_VOTES))
+                    .toList();
+            songWebSocketPublisher.broadcastQueue(sessionId, remainingQueue);
+        }
     }
 
     @Transactional
     public void nextSong(Long sessionId) {
         Session session = sessionService.getSessionById(sessionId);
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
 
         session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .findFirst()
                 .ifPresent(current -> {
-                    current.setPerformed(true);
+                    current.markPerformed();
                     songRepository.save(current);
                 });
 
+        promoteNextSong(sessionId, session);
+    }
+
+    @Transactional
+    public void promoteNextSong(Long sessionId, Session session) {
         List<Song> unplayedSongs = session.getPlaylist().stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .toList();
 
         if (unplayedSongs.size() >= 2) {
             votingService.createVotingRound(sessionId);
-        } else if (unplayedSongs.size() == 1) {
+        }
+        else if (unplayedSongs.size() == 1) {
             Song lastSong = unplayedSongs.get(0);
-            SongGetDTO nextSongDTO = DTOMapper.INSTANCE.toSongGetDTO(lastSong, emptyVotes);
+            SongGetDTO nextSongDTO = DTOMapper.INSTANCE.toSongGetDTO(lastSong, EMPTY_VOTES);
             songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSongDTO);
             songWebSocketPublisher.broadcastQueue(sessionId, List.of(nextSongDTO));
             songWebSocketPublisher.broadcastLyrics(sessionId, lastSong.getLyrics());
-        } else {
+        }
+        else {
             songWebSocketPublisher.broadcastCurrentSong(sessionId, null);
             songWebSocketPublisher.broadcastQueue(sessionId, Collections.emptyList());
             songWebSocketPublisher.broadcastLyrics(sessionId, null);
@@ -203,14 +217,14 @@ public class SongService {
     }
 
     @Transactional(readOnly = true)
-    public void broadcastVotingRoundSongWinner(Long sessionId, Song winner) {
+    public void broadcastVotingRoundSongWinner(Long sessionId, Song winner, Map<Long, Long> voteCounts) {
         Session session = sessionService.getSessionById(sessionId);
-        Map<Long, Long> emptyVotes = Collections.emptyMap();
-        SongGetDTO nextSong = DTOMapper.INSTANCE.toSongGetDTO(winner, emptyVotes);
+
+        SongGetDTO nextSong = DTOMapper.INSTANCE.toSongGetDTO(winner, voteCounts);
 
         List<SongGetDTO> remainingQueue = session.getPlaylist().stream()
                 .filter(song -> !Boolean.TRUE.equals(song.getPerformed()))
-                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, emptyVotes))
+                .map(song -> DTOMapper.INSTANCE.toSongGetDTO(song, EMPTY_VOTES))
                 .toList();
 
         songWebSocketPublisher.broadcastCurrentSong(sessionId, nextSong);

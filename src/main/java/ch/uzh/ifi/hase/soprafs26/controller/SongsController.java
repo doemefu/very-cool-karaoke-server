@@ -3,6 +3,7 @@ package ch.uzh.ifi.hase.soprafs26.controller;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
+import ch.uzh.ifi.hase.soprafs26.service.SessionService;
 import ch.uzh.ifi.hase.soprafs26.service.SongService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -11,16 +12,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class SongsController implements SongsApi {
     private static final String TOKEN_HEADER = "token";
     private final SongService songService;
+    private final SessionService sessionService;
     private final HttpServletRequest request;
 
-    SongsController(SongService songService, HttpServletRequest request) {
+    SongsController(SongService songService, SessionService sessionService, HttpServletRequest request) {
         this.songService = songService;
+        this.sessionService = sessionService;
         this.request = request;
     }
 
@@ -54,11 +56,9 @@ public class SongsController implements SongsApi {
     // Returns 200 + SongGetDTO, 204 if nothing is playing, 404 if session not found
     @Override
     public ResponseEntity<SongGetDTO> sessionsSessionIdSongsCurrentGet(Long sessionId) {
-        Optional<SongGetDTO> current = songService.getCurrentSong(sessionId);
-        if (current.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(current.get());
+        return songService.getCurrentSong(sessionId)
+                .<ResponseEntity<SongGetDTO>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     // POST /sessions/{sessionId}/songs/skip — Skip current song, admin only (S7)
@@ -74,6 +74,8 @@ public class SongsController implements SongsApi {
     // Marks the current song as performed, broadcasts next currentSong + queue
     @Override
     public ResponseEntity<Void> sessionsSessionIdSongsNextPost(Long sessionId) {
+        String token = request.getHeader(TOKEN_HEADER);
+        sessionService.verifyIsAdmin(sessionId, token);
         songService.nextSong(sessionId);
         return ResponseEntity.noContent().build();
     }

@@ -5,9 +5,9 @@ import ch.uzh.ifi.hase.soprafs26.entity.*;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VoteRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.VotingRoundRepository;
-import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
+import ch.uzh.ifi.hase.soprafs26.websocket.VotingWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,14 +15,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.context.ApplicationContext;
 
-import java.time.LocalDateTime;
 import java.time.Instant;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -233,7 +233,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 200L, voter));
 
         assertEquals(400, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -249,7 +249,7 @@ class VotingServiceTest {
                 () -> votingService.castVote(10L, 50L, 100L, voter));
 
         assertEquals(409, ex.getStatusCode().value());
-        verify(voteRepository, never()).save(any());
+        verify(voteRepository, never()).saveAndFlush(any());
     }
 
 
@@ -338,7 +338,7 @@ class VotingServiceTest {
         when(sessionService.getSessionById(10L)).thenReturn(session);
         votingService.createVotingRound(10L);
 
-        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong), any());
         verify(votingRoundRepository, never()).save(any());
         verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
         verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
@@ -385,7 +385,7 @@ class VotingServiceTest {
         assertEquals(VotingStatus.CLOSED, votingRound.getStatus());
         verify(votingRoundRepository, times(1)).save(votingRound);
 
-        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong));
+        verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong), any());
     }
 
     @Test
@@ -396,7 +396,63 @@ class VotingServiceTest {
         votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
 
         verify(votingRoundRepository, never()).save(any());
-        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any(), any());
+    }
+
+    @Test
+    void getRoundsForSession_noRounds_returnsEmptyList() {
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.findBySessionWithCandidatesOrderByStartsAtAsc(session))
+                .thenReturn(List.of());
+
+        List<VotingRoundGetDTO> result = votingService.getRoundsForSession(10L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(voteRepository, never()).countVotesPerSong(any());
+    }
+
+    @Test
+    void getRoundsForSession_multipleRounds_returnsAllOrderedWithCounts() {
+        VotingRound earlier = new VotingRound();
+        earlier.setId(40L);
+        earlier.setSession(session);
+        earlier.setStatus(VotingStatus.CLOSED);
+        earlier.setStartsAt(LocalDateTime.now().minusMinutes(5));
+        earlier.setEndsAt(LocalDateTime.now().minusMinutes(4));
+        earlier.getCandidates().add(candidateSong);
+
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.findBySessionWithCandidatesOrderByStartsAtAsc(session))
+                .thenReturn(List.of(earlier, votingRound));
+
+        VoteRepository.SongVoteCount earlierCount = mock(VoteRepository.SongVoteCount.class);
+        when(earlierCount.getSongId()).thenReturn(100L);
+        when(earlierCount.getCount()).thenReturn(3L);
+        when(voteRepository.countVotesPerSong(earlier)).thenReturn(List.of(earlierCount));
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of());
+
+        List<VotingRoundGetDTO> result = votingService.getRoundsForSession(10L);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(40L, result.get(0).getId());
+        assertEquals(50L, result.get(1).getId());
+        verify(voteRepository, times(1)).countVotesPerSong(earlier);
+        verify(voteRepository, times(1)).countVotesPerSong(votingRound);
+    }
+
+    @Test
+    void getRoundsForSession_sessionNotFound_throwsNotFound() {
+        when(sessionService.getSessionById(999L))
+                .thenThrow(new ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Session not found"));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> votingService.getRoundsForSession(999L));
+
+        assertEquals(404, ex.getStatusCode().value());
+        verify(votingRoundRepository, never()).findBySessionWithCandidatesOrderByStartsAtAsc(any());
     }
 
     @Test
@@ -449,7 +505,7 @@ class VotingServiceTest {
 
         votingService.createVotingRound(10L);
 
-        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any(), any());
         verify(votingRoundRepository, never()).save(any());
         verify(votingWebSocketPublisher, never()).broadcastVotingRound(anyLong(), any());
         verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
@@ -464,7 +520,7 @@ class VotingServiceTest {
 
         votingService.createVotingRound(10L);
 
-        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any());
+        verify(songService, never()).broadcastVotingRoundSongWinner(any(), any(), any());
         verify(votingRoundRepository, never()).save(any());
     }
 

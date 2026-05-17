@@ -70,10 +70,9 @@ public class ReactionPostDTO {
 
     @Override
     public String toString() {
-        String sb = "class ReactionPostDTO {\n" +
+        return "class ReactionPostDTO {\n" +
                 "    type: " + toIndentedString(type) + "\n" +
                 "}";
-        return sb;
     }
 
     /**

@@ -12,7 +12,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,20 +37,29 @@ class SongWebSocketPublisherImplTest {
     }
 
     @Test
-    void broadcastCurrentSong_sendsToCorrectTopic() {
+    void broadcastCurrentSong_sendsWrappedPayload() {
         SongGetDTO song = new SongGetDTO();
         song.setTitle("Current Song");
+        ArgumentCaptor<CurrentSongPayload> captor = ArgumentCaptor.forClass(CurrentSongPayload.class);
 
         publisher.broadcastCurrentSong(1L, song);
 
-        verify(messagingTemplate).convertAndSend("/topic/sessions/1/currentSong", song);
+        verify(messagingTemplate).convertAndSend(
+                eq("/topic/sessions/1/currentSong"),
+                captor.capture());
+        assertEquals("Current Song", captor.getValue().getSong().getTitle());
     }
 
     @Test
-    void broadcastCurrentSong_withNullSong_sendsNullPayload() {
+    void broadcastCurrentSong_withNullSong_sendsWrappedNull() {
+        ArgumentCaptor<CurrentSongPayload> captor = ArgumentCaptor.forClass(CurrentSongPayload.class);
+
         publisher.broadcastCurrentSong(1L, null);
 
-        verify(messagingTemplate).convertAndSend("/topic/sessions/1/currentSong", (Object) null);
+        verify(messagingTemplate).convertAndSend(
+                eq("/topic/sessions/1/currentSong"),
+                captor.capture());
+        assertNull(captor.getValue().getSong());
     }
 
     @Test

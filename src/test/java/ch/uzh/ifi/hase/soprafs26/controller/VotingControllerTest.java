@@ -3,6 +3,7 @@ package ch.uzh.ifi.hase.soprafs26.controller;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.entity.VotingRound;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.VotePostDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.VotingRoundGetDTO;
 import ch.uzh.ifi.hase.soprafs26.service.UserService;
 import ch.uzh.ifi.hase.soprafs26.service.VotingService;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -26,7 +28,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(VotingController.class)
 class VotingControllerTest {
@@ -237,6 +239,49 @@ class VotingControllerTest {
 
         verify(votingService).getVotingRound(99L, 50L);
         verify(votingService, never()).getVoteCounts(any());
+    }
+
+    @Test
+    void getVotingRounds_noRounds_returns200WithEmptyArray() throws Exception {
+        given(votingService.getRoundsForSession(10L)).willReturn(List.of());
+
+        mockMvc.perform(get("/sessions/10/votingRounds")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+
+        verify(votingService).getRoundsForSession(10L);
+    }
+
+    @Test
+    void getVotingRounds_multipleRounds_returns200WithList() throws Exception {
+        VotingRoundGetDTO dto1 = new VotingRoundGetDTO();
+        dto1.setId(40L);
+        VotingRoundGetDTO dto2 = new VotingRoundGetDTO();
+        dto2.setId(50L);
+
+        given(votingService.getRoundsForSession(10L)).willReturn(List.of(dto1, dto2));
+
+        mockMvc.perform(get("/sessions/10/votingRounds")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(40))
+                .andExpect(jsonPath("$[1].id").value(50));
+
+        verify(votingService).getRoundsForSession(10L);
+    }
+
+    @Test
+    void getVotingRounds_sessionNotFound_returns404() throws Exception {
+        given(votingService.getRoundsForSession(999L))
+                .willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+
+        mockMvc.perform(get("/sessions/999/votingRounds")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+
+        verify(votingService).getRoundsForSession(999L);
     }
 
     private String asJsonString(final Object object) {

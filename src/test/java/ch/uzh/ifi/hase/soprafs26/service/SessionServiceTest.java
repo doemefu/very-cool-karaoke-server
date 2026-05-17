@@ -2,9 +2,12 @@ package ch.uzh.ifi.hase.soprafs26.service;
 
 import ch.uzh.ifi.hase.soprafs26.constant.SessionStatus;
 import ch.uzh.ifi.hase.soprafs26.entity.Session;
+import ch.uzh.ifi.hase.soprafs26.entity.Song;
 import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.SessionGetDTO;
+import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,6 +32,12 @@ class SessionServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private SongService songService;
+
+    @Mock
+    private SessionWebSocketPublisher sessionWebSocketPublisher;
 
     @Mock
     private SongWebSocketPublisher songWebSocketPublisher;
@@ -170,8 +179,22 @@ class SessionServiceTest {
                 () -> sessionService.joinSession(10L, "000000", 2L));
 
         assertEquals(400, ex.getStatusCode().value());
+        assert ex.getReason() != null;
         assertTrue(ex.getReason().toLowerCase().contains("invalid game pin"));
         // Must not proceed to user lookup or save when PIN is wrong
+        verify(userRepository, never()).findById(any());
+        verify(sessionRepository, never()).save(any());
+    }
+
+    @Test
+    void joinSession_endedSession_throwsNotFound() {
+        session.setStatus(SessionStatus.ENDED);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> sessionService.joinSession(10L, "482910", 2L));
+
+        assertEquals(404, ex.getStatusCode().value());
         verify(userRepository, never()).findById(any());
         verify(sessionRepository, never()).save(any());
     }
@@ -198,6 +221,67 @@ class SessionServiceTest {
         verify(sessionRepository, never()).save(any());
     }
 
+    @Test
+    void joinSession_rejoinBeforeAddingSong_reAddsToPendingInitialSong() {
+        session.addParticipant(participant);
+        assertFalse(session.isPendingInitialSong(participant),
+                "Pre-condition: participant should not yet be flagged as pending");
+        assertTrue(session.getPlaylist().isEmpty(),
+                "Pre-condition: participant has not contributed a song");
+        assertEquals(SessionStatus.CREATED, session.getStatus(),
+                "Pre-condition: session is still in lobby phase");
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertTrue(session.isPendingInitialSong(participant),
+                "Rejoin without a contributed song must re-add the user to pendingInitialSong");
+    }
+
+    @Test
+    void joinSession_rejoinAfterAddingSong_doesNotReAddToPendingInitialSong() {
+        session.addParticipant(participant);
+
+        Song contributed = new Song();
+        contributed.setId(500L);
+        contributed.setAddedBy(participant);
+        contributed.setSession(session);
+        session.addSong(contributed);
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertFalse(session.isPendingInitialSong(participant),
+                "Rejoin after a contributed song must NOT re-add the user to pendingInitialSong");
+    }
+
+    @Test
+    void joinSession_rejoinAfterSessionStarted_doesNotReAddToPendingInitialSong() {
+        session.addParticipant(participant);
+        session.setStatus(SessionStatus.ACTIVE);
+
+        // Participant already contributed a song before the session started
+        Song contributed = new Song();
+        contributed.setId(501L);
+        contributed.setAddedBy(participant);
+        contributed.setSession(session);
+        session.addSong(contributed);
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertFalse(session.isPendingInitialSong(participant),
+                "Rejoin after the session has started must NOT re-flag pendingInitialSong if song was already contributed");
+    }
 
     // leaveSession
 
@@ -297,5 +381,51 @@ class SessionServiceTest {
                 () -> sessionService.getParticipants(99L));
 
         assertEquals(404, ex.getStatusCode().value());
+    }
+
+    @Test
+    void updateSessionStatus_createdToActive_callsPromoteNextSongAndPersistsActive() {
+        session.setStatus(SessionStatus.CREATED);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        Session result = sessionService.updateSessionStatus(10L, SessionStatus.ACTIVE, 1L);
+
+        assertEquals(SessionStatus.ACTIVE, result.getStatus());
+        verify(songService, times(1)).promoteNextSong(eq(10L), eq(session));
+    }
+
+    @Test
+    void updateSessionStatus_broadcastsStatusViaWebSocket() {
+        session.setStatus(SessionStatus.CREATED);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.updateSessionStatus(10L, SessionStatus.ACTIVE, admin.getId());
+
+        verify(sessionWebSocketPublisher).broadcastSessionStatus(eq(10L), any(SessionGetDTO.class));
+    }
+
+    @Test
+    void joinSession_broadcastsParticipantsViaWebSocket() {
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        verify(sessionWebSocketPublisher).broadcastParticipants(eq(10L), anyList());
+    }
+
+    @Test
+    void leaveSession_broadcastsParticipantsViaWebSocket() {
+        session.addParticipant(participant);
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.leaveSession(10L, 2L);
+
+        verify(sessionWebSocketPublisher).broadcastParticipants(eq(10L), anyList());
     }
 }

@@ -266,7 +266,7 @@ public class SessionGetDTO {
 
     @Override
     public String toString() {
-        String sb = "class SessionGetDTO {\n" +
+        return "class SessionGetDTO {\n" +
                 "    id: " + toIndentedString(id) + "\n" +
                 "    name: " + toIndentedString(name) + "\n" +
                 "    description: " + toIndentedString(description) + "\n" +
@@ -277,7 +277,6 @@ public class SessionGetDTO {
                 "    participants: " + toIndentedString(participants) + "\n" +
                 "    requiresSongSelection: " + toIndentedString(requiresSongSelection) + "\n" +
                 "}";
-        return sb;
     }
 
     /**

@@ -92,11 +92,10 @@ public class UserPostDTO {
 
     @Override
     public String toString() {
-        String sb = "class UserPostDTO {\n" +
+        return "class UserPostDTO {\n" +
                 "    username: " + toIndentedString(username) + "\n" +
                 "    password: " + "*" + "\n" +
                 "}";
-        return sb;
     }
 
     /**

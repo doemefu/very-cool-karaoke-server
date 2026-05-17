@@ -6,17 +6,21 @@ import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SessionRepository;
 import ch.uzh.ifi.hase.soprafs26.repository.UserRepository;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
+import ch.uzh.ifi.hase.soprafs26.rest.dto.UserGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.mapper.DTOMapper;
+import ch.uzh.ifi.hase.soprafs26.websocket.SessionWebSocketPublisher;
 import ch.uzh.ifi.hase.soprafs26.websocket.SongWebSocketPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
+
 
 @Service
 @Transactional
@@ -30,16 +34,21 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final SongWebSocketPublisher songWebSocketPublisher;
+    private final SessionWebSocketPublisher sessionWebSocketPublisher;
     private final UserService userService;
+    private final SongService songService;
 
     @Autowired
     public SessionService(SessionRepository sessionRepository,
                           UserRepository userRepository,
-                          SongWebSocketPublisher songWebSocketPublisher, UserService userService) {
+                          SongWebSocketPublisher songWebSocketPublisher, UserService userService,
+                          @Lazy SongService songService, SessionWebSocketPublisher sessionWebSocketPublisher) {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.songWebSocketPublisher = songWebSocketPublisher;
+        this.sessionWebSocketPublisher = sessionWebSocketPublisher;
         this.userService = userService;
+        this.songService = songService;
     }
 
     public void verifyIsAdmin(Long sessionId, String token) {
@@ -113,7 +122,16 @@ public class SessionService {
         }
 
         session.setStatus(newStatus);
-        return sessionRepository.save(session);
+        Session savedSession = sessionRepository.save(session);
+        if (current == SessionStatus.CREATED && newStatus == SessionStatus.ACTIVE) {
+            songService.promoteNextSong(sessionId, session);
+        }
+        // requiresSongSelection is a per-user field; it is intentionally null here
+        // since this is a broadcast to all subscribers. Clients needing this flag
+        // should read it from the REST response (GET /sessions/{id}/participants).
+        sessionWebSocketPublisher.broadcastSessionStatus(sessionId,
+                DTOMapper.INSTANCE.convertEntityToSessionGetDTO(savedSession));
+        return savedSession;
     }
 
 
@@ -143,23 +161,30 @@ public class SessionService {
                     HttpStatus.BAD_REQUEST, "Invalid game pin");
         }
 
+        if (session.getStatus() == SessionStatus.ENDED) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session has already ended");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, USER_NOT_FOUND));
 
-        boolean isNewParticipant = !session.getParticipants().contains(user);
-
         // Set.add() is a no-op when user is already present → idempotent
         session.addParticipant(user);
 
-        if (isNewParticipant) {
-            session.addToPendingInitialSong(user);
+        if (session.getStatus() == SessionStatus.CREATED || session.getStatus() == SessionStatus.ACTIVE) {
+            if (hasContributedSong(session, user)) {
+                session.removeFromPendingInitialSong(user);
+            } else {
+                session.addToPendingInitialSong(user);
+            }
         }
 
         Session saved = sessionRepository.save(session);
 
         Map<Long, Long> emptyVotes = new HashMap<>();
         List<SongGetDTO> queue = saved.getPlaylist().stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getPerformed()))
                 .map(s -> DTOMapper.INSTANCE.toSongGetDTO(s, emptyVotes))
                 .toList();
         songWebSocketPublisher.broadcastQueue(sessionId, queue);
@@ -173,10 +198,20 @@ public class SessionService {
                     songWebSocketPublisher.broadcastLyrics(sessionId, s.getLyrics());
                 });
 
+        List<UserGetDTO> participantDTOs = saved.getParticipants().stream()
+                .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
+                .toList();
+        sessionWebSocketPublisher.broadcastParticipants(sessionId, participantDTOs);
+
         log.debug("User {} joined session {}", userId, sessionId);
         return saved;
     }
 
+    private boolean hasContributedSong(Session session, User user) {
+        return session.getPlaylist().stream()
+                .anyMatch(s -> s.getAddedBy() != null
+                        && s.getAddedBy().getId().equals(user.getId()));
+    }
 
     /**
      * Remove a user from a session's participant list (soft-leave).
@@ -201,7 +236,13 @@ public class SessionService {
                         HttpStatus.NOT_FOUND, "Session or participant not found"));
 
         session.removeParticipant(user);
-        sessionRepository.save(session);
+        Session saved = sessionRepository.save(session);
+
+        List<UserGetDTO> participantDTOs = saved.getParticipants().stream()
+                .map(DTOMapper.INSTANCE::convertEntityToUserGetDTO)
+                .toList();
+        sessionWebSocketPublisher.broadcastParticipants(sessionId, participantDTOs);
+
         log.debug("User {} left session {}", userId, sessionId);
     }
 

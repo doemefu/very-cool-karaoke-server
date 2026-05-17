@@ -192,7 +192,7 @@ public class VotingRoundGetDTO {
 
     @Override
     public String toString() {
-        String sb = "class VotingRoundGetDTO {\n" +
+        return "class VotingRoundGetDTO {\n" +
                 "    id: " + toIndentedString(id) + "\n" +
                 "    roundNumber: " + toIndentedString(roundNumber) + "\n" +
                 "    status: " + toIndentedString(status) + "\n" +
@@ -200,7 +200,6 @@ public class VotingRoundGetDTO {
                 "    endsAt: " + toIndentedString(endsAt) + "\n" +
                 "    candidates: " + toIndentedString(candidates) + "\n" +
                 "}";
-        return sb;
     }
 
     /**

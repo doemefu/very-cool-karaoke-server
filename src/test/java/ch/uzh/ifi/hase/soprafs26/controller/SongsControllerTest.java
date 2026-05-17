@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs26.controller;
 
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongSearchResultDTO;
+import ch.uzh.ifi.hase.soprafs26.service.SessionService;
 import ch.uzh.ifi.hase.soprafs26.service.SongService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,6 +34,9 @@ class SongsControllerTest {
 
     @MockitoBean
     private SongService songService;
+
+    @MockitoBean
+    private SessionService sessionService;
 
     @Test
     void songsSearch_validQuery_returns200WithResults() throws Exception {
@@ -166,6 +168,29 @@ class SongsControllerTest {
         mockMvc.perform(delete("/sessions/42/songs/7")
                         .header("token", "admin-token"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void nextSong_adminToken_returns204AndAdvances() throws Exception {
+        willDoNothing().given(sessionService).verifyIsAdmin(42L, "admin-token");
+        willDoNothing().given(songService).nextSong(42L);
+
+        mockMvc.perform(post("/sessions/42/songs/next")
+                        .header("token", "admin-token"))
+                .andExpect(status().isNoContent());
+
+        verify(sessionService).verifyIsAdmin(42L, "admin-token");
+        verify(songService).nextSong(42L);
+    }
+
+    @Test
+    void nextSong_notAdmin_returns403() throws Exception {
+        willThrow(new ResponseStatusException(FORBIDDEN, "Only the session admin can perform this action"))
+                .given(sessionService).verifyIsAdmin(eq(42L), any());
+
+        mockMvc.perform(post("/sessions/42/songs/next")
+                        .header("token", "intruder-token"))
+                .andExpect(status().isForbidden());
     }
 
 }

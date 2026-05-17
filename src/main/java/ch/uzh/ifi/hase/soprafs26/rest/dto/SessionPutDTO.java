@@ -70,10 +70,9 @@ public class SessionPutDTO {
 
     @Override
     public String toString() {
-        String sb = "class SessionPutDTO {\n" +
+        return "class SessionPutDTO {\n" +
                 "    status: " + toIndentedString(status) + "\n" +
                 "}";
-        return sb;
     }
 
     /**
