@@ -97,7 +97,7 @@ public class SongService {
         song.setAddedBy(addedBy);
         song = songRepository.save(song);
 
-        sessionService.markInitialSongAdded(sessionId, addedBy.getId());
+        session.removeFromPendingInitialSong(addedBy);
         session.addSong(song); // update in-memory list for broadcast
 
         // Broadcast updated queue (no votes yet → empty counts map)
