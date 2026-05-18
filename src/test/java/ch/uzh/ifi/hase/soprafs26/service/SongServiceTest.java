@@ -133,6 +133,27 @@ class SongServiceTest {
     }
 
     @Test
+    void addToQueue_callsMarkInitialSongAdded() {
+        User user = new User();
+        user.setId(42L);
+
+        Session session = new Session();
+        SongPostDTO dto = new SongPostDTO("track999", "Bohemian Rhapsody", "Queen", 354000);
+
+        when(sessionService.getSessionById(5L)).thenReturn(session);
+        when(userService.getUserByToken("token")).thenReturn(user);
+        when(songRepository.save(any(Song.class))).thenAnswer(inv -> {
+            Song s = inv.getArgument(0);
+            s.setId(99L);
+            return s;
+        });
+
+        songService.addToQueue(5L, dto, "token");
+
+        verify(sessionService).markInitialSongAdded(5L, 42L);
+    }
+
+    @Test
     void addToQueue_noLyricsCache_persistsSongWithNullLyrics() {
         Session session = new Session();
         SongPostDTO dto = new SongPostDTO("uncached", "Unknown Song", "Unknown", 180000);
