@@ -283,6 +283,41 @@ class SessionServiceTest {
                 "Rejoin after the session has started must NOT re-flag pendingInitialSong if song was already contributed");
     }
 
+    @Test
+    void joinSession_pausedSession_newUser_addsToPendingInitialSong() {
+        session.setStatus(SessionStatus.PAUSED);
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertTrue(session.isPendingInitialSong(participant),
+                "A new user joining a PAUSED session must be flagged as pending initial song");
+    }
+
+    @Test
+    void joinSession_pausedSession_userWithContributedSong_doesNotAddToPendingInitialSong() {
+        session.setStatus(SessionStatus.PAUSED);
+        session.addParticipant(participant);
+
+        Song contributed = new Song();
+        contributed.setId(502L);
+        contributed.setAddedBy(participant);
+        contributed.setSession(session);
+        session.addSong(contributed);
+
+        when(sessionRepository.findById(10L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(participant));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(i -> i.getArgument(0));
+
+        sessionService.joinSession(10L, "482910", 2L);
+
+        assertFalse(session.isPendingInitialSong(participant),
+                "A user who already contributed a song must NOT be flagged as pending when rejoining a PAUSED session");
+    }
+
     // leaveSession
 
     @Test
