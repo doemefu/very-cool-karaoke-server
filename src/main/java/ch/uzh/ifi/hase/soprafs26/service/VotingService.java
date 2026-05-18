@@ -202,7 +202,6 @@ public class VotingService {
 
         round.setStatus(VotingStatus.CLOSED);
         round.setEndsAt(LocalDateTime.now(ZoneOffset.UTC));
-        votingRoundRepository.save(round);
 
         Map<Long, Long> finalCounts = getVoteCounts(round);
 
@@ -214,8 +213,10 @@ public class VotingService {
 
         Song votingRoundSongWinner = winnerCandidates.get(random.nextInt(winnerCandidates.size()));
 
+        round.setWinnerId(votingRoundSongWinner.getId());
+        votingRoundRepository.save(round);
+
         VotingRoundGetDTO closedRoundDTO = DTOMapper.INSTANCE.toVotingRoundGetDTO(round, finalCounts);
-        closedRoundDTO.setWinnerId(votingRoundSongWinner.getId());
         votingWebSocketPublisher.broadcastVotingRound(sessionId, closedRoundDTO);
 
         moveWinnerToFrontOfQueue(sessionId, votingRoundSongWinner);

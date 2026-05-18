@@ -383,6 +383,8 @@ class VotingServiceTest {
         votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
 
         assertEquals(VotingStatus.CLOSED, votingRound.getStatus());
+        assertEquals(candidateSong.getId(), votingRound.getWinnerId(),
+                "winnerId must be persisted on the entity so the GET endpoint returns it correctly");
         verify(votingRoundRepository, times(1)).save(votingRound);
 
         verify(songService, times(1)).broadcastVotingRoundSongWinner(eq(10L), eq(candidateSong), any());
@@ -552,5 +554,58 @@ class VotingServiceTest {
                 .findFirst()
                 .orElseThrow();
         assertEquals(2, votedSong.getCurrentVoteCount());
+    }
+
+    @Test
+    void getRoundsForSession_closedRound_includesWinnerIdInDTO() {
+        VotingRound closedRound = new VotingRound();
+        closedRound.setId(60L);
+        closedRound.setSession(session);
+        closedRound.setStatus(VotingStatus.CLOSED);
+        closedRound.setStartsAt(LocalDateTime.now().minusMinutes(2));
+        closedRound.setEndsAt(LocalDateTime.now().minusMinutes(1));
+        closedRound.setWinnerId(100L);
+        closedRound.getCandidates().add(candidateSong);
+
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+        when(votingRoundRepository.findBySessionWithCandidatesOrderByStartsAtAsc(session))
+                .thenReturn(List.of(closedRound));
+        when(voteRepository.countVotesPerSong(closedRound)).thenReturn(List.of());
+
+        List<VotingRoundGetDTO> result = votingService.getRoundsForSession(10L);
+
+        assertEquals(1, result.size());
+        assertEquals(100L, result.get(0).getWinnerId(),
+                "GET endpoint must return the persisted winnerId so the frontend shows the correct winner");
+    }
+
+    @Test
+    void finishVotingRound_tiedVotes_picksOneOfTheTiedSongsAsWinner() {
+        Song tiedSong = new Song();
+        tiedSong.setId(300L);
+        tiedSong.setTitle("Tied Song");
+        tiedSong.setPerformed(false);
+        votingRound.getCandidates().add(tiedSong);
+        session.setPlaylist(new ArrayList<>(List.of(candidateSong, tiedSong)));
+
+        when(votingRoundRepository.findByIdWithCandidates(50L)).thenReturn(Optional.of(votingRound));
+        when(sessionService.getSessionById(10L)).thenReturn(session);
+
+        VoteRepository.SongVoteCount count1 = mock(VoteRepository.SongVoteCount.class);
+        when(count1.getSongId()).thenReturn(100L);
+        when(count1.getCount()).thenReturn(3L);
+
+        VoteRepository.SongVoteCount count2 = mock(VoteRepository.SongVoteCount.class);
+        when(count2.getSongId()).thenReturn(300L);
+        when(count2.getCount()).thenReturn(3L);
+
+        when(voteRepository.countVotesPerSong(votingRound)).thenReturn(List.of(count1, count2));
+
+        votingService.finishVotingRoundAndPlayNextSong(10L, 50L);
+
+        assertEquals(VotingStatus.CLOSED, votingRound.getStatus());
+        assertTrue(
+                votingRound.getWinnerId().equals(100L) || votingRound.getWinnerId().equals(300L),
+                "On a tie, one of the tied songs must be selected as winner");
     }
 }

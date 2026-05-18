@@ -69,6 +69,7 @@ public interface DTOMapper {
     @Mapping(target = "endsAt", source = "round.endsAt")
     @Mapping(target = "candidates", source = "candidates", qualifiedByName = "candidatesWithVoteCounts")
     @Mapping(target = "roundNumber", ignore = true)
+    @Mapping(target = "winnerId", source = "round.winnerId")
     VotingRoundGetDTO toVotingRoundGetDTO(VotingRound round, @Context Map<Long, Long> counts);
 
     @Mapping(target = "currentVoteCount", expression = "java(counts.getOrDefault(song.getId(), 0L).intValue())")
