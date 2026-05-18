@@ -2,6 +2,7 @@ package ch.uzh.ifi.hase.soprafs26.service;
 
 import ch.uzh.ifi.hase.soprafs26.entity.Session;
 import ch.uzh.ifi.hase.soprafs26.entity.Song;
+import ch.uzh.ifi.hase.soprafs26.entity.User;
 import ch.uzh.ifi.hase.soprafs26.repository.SongRepository;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongGetDTO;
 import ch.uzh.ifi.hase.soprafs26.rest.dto.SongPostDTO;
@@ -92,9 +93,11 @@ public class SongService {
         song.setDurationMs(dto.getDurationMs());
         song.setLyrics(getCachedLyrics(dto.getSpotifyId())); // nullable
         song.setSession(session);
-        song.setAddedBy(userService.getUserByToken(token));
+        User addedBy = userService.getUserByToken(token);
+        song.setAddedBy(addedBy);
         song = songRepository.save(song);
 
+        sessionService.markInitialSongAdded(sessionId, addedBy.getId());
         session.addSong(song); // update in-memory list for broadcast
 
         // Broadcast updated queue (no votes yet → empty counts map)

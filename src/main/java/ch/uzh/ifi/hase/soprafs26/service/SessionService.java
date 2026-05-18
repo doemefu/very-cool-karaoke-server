@@ -173,7 +173,7 @@ public class SessionService {
         // Set.add() is a no-op when user is already present → idempotent
         session.addParticipant(user);
 
-        if (session.getStatus() == SessionStatus.CREATED || session.getStatus() == SessionStatus.ACTIVE) {
+        if (session.getStatus() != SessionStatus.ENDED) {
             if (hasContributedSong(session, user)) {
                 session.removeFromPendingInitialSong(user);
             } else {
