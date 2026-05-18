@@ -133,11 +133,14 @@ class SongServiceTest {
     }
 
     @Test
-    void addToQueue_callsMarkInitialSongAdded() {
+    void addToQueue_removesUserFromPendingInitialSong() {
         User user = new User();
         user.setId(42L);
 
         Session session = new Session();
+        session.addToPendingInitialSong(user);
+        assertTrue(session.isPendingInitialSong(user), "Pre-condition: user must be pending before adding a song");
+
         SongPostDTO dto = new SongPostDTO("track999", "Bohemian Rhapsody", "Queen", 354000);
 
         when(sessionService.getSessionById(5L)).thenReturn(session);
@@ -150,7 +153,7 @@ class SongServiceTest {
 
         songService.addToQueue(5L, dto, "token");
 
-        verify(sessionService).markInitialSongAdded(5L, 42L);
+        assertFalse(session.isPendingInitialSong(user), "User must be removed from pendingInitialSong after adding a song");
     }
 
     @Test

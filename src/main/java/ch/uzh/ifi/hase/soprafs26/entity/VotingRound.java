@@ -49,4 +49,7 @@ public class VotingRound {
     @OneToMany(mappedBy = "votingRound", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vote> votes = new ArrayList<>();
 
+    @Column
+    private Long winnerId;
+
 }
